@@ -1,0 +1,21 @@
+{
+  "name": "purescript-day-picker",
+  "description": "A day picker in purescript",
+  "authors": [
+    "Ping Chen <remotenonsense@gmail.com>"
+  ],
+  "license": "BSD-3-Clause",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "output"
+  ],
+  "dependencies": {
+    "purescript-halogen": "^3.0.1",
+    "purescript-datetime": "^3.4.1"
+  },
+  "devDependencies": {
+    "purescript-psci-support": "^3.0.0"
+  }
+}
