@@ -1,0 +1,14 @@
+{
+  "name": "examples",
+  "description": "purescript-day-picker examples",
+  "license": "BSD-3-Clause",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components"
+  ],
+  "dependencies": {
+    "purescript-now": "^3.0.0"
+  }
+}

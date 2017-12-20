@@ -79,9 +79,7 @@ renderTableBody today =
 renderCalendar :: Date -> H.ComponentHTML Query
 renderCalendar today =
   HH.div_
-    [ HH.p_
-        [ HH.text $ show today ]
-    , HH.table_
+    [ HH.table_
         [ renderTableHeader
         , renderTableBody today
         ]
