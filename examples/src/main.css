@@ -1,0 +1,12 @@
+.container {
+  display: flex;
+}
+
+.sidebar {
+  width: 15rem;
+  flex-shrink: 0;
+}
+
+.main {
+  flex: 1;
+}

@@ -5,22 +5,37 @@ import Prelude
 import Data.Maybe (Maybe(..))
 import Data.Date (Date)
 
+import Data.Either.Nested (Either2)
+import Data.Functor.Coproduct.Nested (Coproduct2)
+
 import Halogen as H
+import Halogen.Component.ChildPath as CP
 import Halogen.HTML as HH
-import Halogen.HTML.Events as HE
+import Halogen.HTML.Properties as HP
 
 import Halogen.DayPicker as DayPicker
 
+import Route (Route(..))
+import Examples.Simple as ExpSimple
+
 data Query a
-  = HandleDayPicker DayPicker.Message a
+  = DayPickerChange DayPicker.Message a
+  | RouteChange Route a
 
 type State =
   { selectedDate :: Maybe Date
+  , route :: Route
   }
 
-data Slot = DayPickerSlot
-derive instance eqDayPickerSlot :: Eq Slot
-derive instance ordDayPickerSlot :: Ord Slot
+type ChildQuery = Coproduct2 ExpSimple.Query ExpSimple.Query
+
+type Slot = Either2 Unit Unit
+
+renderMain :: forall m. Route -> Date -> H.ParentHTML Query ChildQuery Slot m
+renderMain Simple today =
+  HH.slot' CP.cp1 unit (ExpSimple.component today) unit absurd
+renderMain _ today =
+  HH.text "main body"
 
 app :: forall m. Date -> H.Component HH.HTML Query Unit Void m
 app today =
@@ -33,21 +48,34 @@ app today =
   where
 
   initialState :: State
-  initialState = { selectedDate: Nothing }
+  initialState = { selectedDate: Nothing, route: Home }
 
-  render :: State -> H.ParentHTML Query DayPicker.Query Slot m
+  render :: State -> H.ParentHTML Query ChildQuery Slot m
   render state =
-    HH.div_
-      [ HH.h1_
-          [ HH.text "Simple day picker" ]
-      , HH.p_
-          [ HH.text $ "Click to select a day" ]
-      , HH.slot DayPickerSlot DayPicker.dayPicker today (HE.input HandleDayPicker)
-      , HH.text $ "You selected " <> show state.selectedDate
+    HH.div [ HP.class_ $ HH.ClassName "container" ]
+      [ HH.div [ HP.class_ $ HH.ClassName "sidebar" ]
+          [ HH.a [ HP.href $ show Home ]
+              [ HH.text "Home" ]
+          , HH.ul_
+              [ HH.li_
+                  [ HH.a [ HP.href $ show Simple ]
+                      [ HH.text "Simple day picker" ]
+                  ]
+              , HH.li_
+                  [ HH.a [ HP.href $ show SimpleInput ]
+                      [ HH.text "Simple day picker input" ]
+                  ]
+              ]
+          ]
+      , HH.div [ HP.class_ $ HH.ClassName "main" ]
+          [ renderMain state.route today ]
       ]
 
-  eval :: Query ~> H.ParentDSL State Query DayPicker.Query Slot Void m
+  eval :: Query ~> H.ParentDSL State Query ChildQuery Slot Void m
   eval = case _ of
-    HandleDayPicker date next -> do
+    DayPickerChange date next -> do
       H.modify (\state -> state { selectedDate = Just date })
+      pure next
+    RouteChange route next -> do
+      H.modify (\state -> state { route = route })
       pure next
