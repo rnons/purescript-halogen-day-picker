@@ -27,7 +27,7 @@ simple :: Match Route
 simple = Simple <$ lit "simple"
 
 simpleInput :: Match Route
-simpleInput = SimpleInput <$ lit "simple"
+simpleInput = SimpleInput <$ lit "simple-input"
 
 routing :: Match Route
 routing =

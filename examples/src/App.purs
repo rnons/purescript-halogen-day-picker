@@ -17,6 +17,7 @@ import Halogen.DayPicker as DayPicker
 
 import Route (Route(..))
 import Examples.Simple as ExpSimple
+import Examples.SimpleInput as ExpSimpleInput
 
 data Query a
   = DayPickerChange DayPicker.Message a
@@ -27,13 +28,15 @@ type State =
   , route :: Route
   }
 
-type ChildQuery = Coproduct2 ExpSimple.Query ExpSimple.Query
+type ChildQuery = Coproduct2 ExpSimple.Query ExpSimpleInput.Query
 
 type Slot = Either2 Unit Unit
 
 renderMain :: forall m. Route -> Date -> H.ParentHTML Query ChildQuery Slot m
 renderMain Simple today =
   HH.slot' CP.cp1 unit (ExpSimple.component today) unit absurd
+renderMain SimpleInput today =
+  HH.slot' CP.cp2 unit (ExpSimpleInput.component today) unit absurd
 renderMain _ today =
   HH.text "main body"
 
