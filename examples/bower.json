@@ -11,5 +11,8 @@
   "dependencies": {
     "purescript-now": "^3.0.0",
     "purescript-routing": "^6.1.2"
+  },
+  "devDependencies": {
+    "purescript-psci-support": "^3.0.0"
   }
 }
