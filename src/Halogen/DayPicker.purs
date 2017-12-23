@@ -27,7 +27,10 @@ pprWeekday Sunday = "日"
 
 data Query a = Click Date a
 
-type State = { today :: Date }
+type State =
+  { today :: Date
+  , firstDayOfFirstMonth :: Date
+  }
 
 type Input = Date
 
@@ -76,14 +79,23 @@ renderTableBody today =
     lastDay = Date.lastDayOfMonth year month
     lastRowIndex = (fromEnum lastDay) / 7 + 1
 
-renderCalendar :: Date -> H.ComponentHTML Query
-renderCalendar today =
+render :: State -> H.ComponentHTML Query
+render state =
   HH.div_
-    [ HH.table_
+    [ HH.div_
+        [ HH.button [] [ HH.text "prev" ]
+        , HH.text headText
+        , HH.button [] [ HH.text "next" ]
+        ]
+    , HH.table_
         [ renderTableHeader
-        , renderTableBody today
+        , renderTableBody state.today
         ]
     ]
+  where
+    yearStr = show $ fromEnum $ Date.year state.firstDayOfFirstMonth
+    monthStr = show $ fromEnum $ Date.month state.firstDayOfFirstMonth
+    headText = yearStr <> "年" <> monthStr <> "月"
 
 dayPicker :: forall m. H.Component HH.HTML Query Input Message m
 dayPicker =
@@ -96,11 +108,14 @@ dayPicker =
   where
 
   initialState :: Input -> State
-  initialState input = { today: input }
-
-  render :: State -> H.ComponentHTML Query
-  render state =
-    renderCalendar state.today
+  initialState today =
+    let year = Date.year today
+        month = Date.month today
+        firstDayOfFirstMonth = Date.canonicalDate year month Bounded.bottom
+     in
+        { today: today
+        , firstDayOfFirstMonth: firstDayOfFirstMonth
+        }
 
   eval :: Query ~> H.ComponentDSL State Query Message m
   eval = case _ of
