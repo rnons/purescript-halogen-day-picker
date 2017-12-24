@@ -15,7 +15,7 @@ data Query a
   = HandleDayPicker DayPicker.Message a
 
 type State =
-  { selectedDate :: Maybe Date
+  { selectedDate :: DayPicker.SelectedDate
   }
 
 data Slot = DayPickerSlot
@@ -33,21 +33,27 @@ component today =
   where
 
   initialState :: State
-  initialState = { selectedDate: Nothing }
+  initialState = { selectedDate: DayPicker.None }
 
   render :: State -> H.ParentHTML Query DayPicker.Query Slot m
   render state =
-    HH.div_
-      [ HH.h1_
-          [ HH.text "Simple day picker" ]
-      , HH.p_
-          [ HH.text $ "Click to select a day" ]
-      , HH.slot DayPickerSlot DayPicker.dayPicker today (HE.input HandleDayPicker)
-      , HH.text $ "You selected " <> show state.selectedDate
-      ]
+    let input =
+          { today: today
+          , selectedDate: state.selectedDate
+          }
+     in
+        HH.div_
+          [ HH.h1_
+              [ HH.text "Simple day picker" ]
+          , HH.p_
+              [ HH.text $ "Click to select a day" ]
+          , HH.div_
+              [ HH.slot DayPickerSlot DayPicker.dayPicker input (HE.input HandleDayPicker) ]
+          , HH.text $ "You selected " <> show state.selectedDate
+          ]
 
   eval :: Query ~> H.ParentDSL State Query DayPicker.Query Slot Void m
   eval = case _ of
     HandleDayPicker date next -> do
-      H.modify (\state -> state { selectedDate = Just date })
+      H.modify (\state -> state { selectedDate = DayPicker.Single date })
       pure next

@@ -46,10 +46,15 @@ dayPickerInput today =
 
   render :: State -> H.ParentHTML Query DayPicker.Query Unit m
   render state =
-    HH.div_
-      [ HH.input [ HP.type_ InputText, HP.value $ show state.selectedDate ]
-      , HH.slot unit DayPicker.dayPicker state.today (HE.input HandleDayPicker)
-      ]
+    let input =
+          { today: today
+          , selectedDate: DayPicker.None
+          }
+     in
+        HH.div_
+          [ HH.input [ HP.type_ InputText, HP.value $ show state.selectedDate ]
+          , HH.slot unit DayPicker.dayPicker input (HE.input HandleDayPicker)
+          ]
 
   eval :: Query ~> H.ParentDSL State Query DayPicker.Query Slot Message m
   eval (HandleInput selectedDate next) = do

@@ -10,3 +10,29 @@
 .main {
   flex: 1;
 }
+
+.DayPicker {
+  display: inline-block;
+  font-family: sans-serif;
+}
+
+.DayPicker-head {
+  display: flex;
+  justify-content: space-between;
+}
+
+.DayPicker-day {
+  padding: 0.5rem;
+  border-radius: 50%;
+  text-align: center;
+  cursor: pointer;
+}
+
+.DayPicker-day:hover {
+  background-color: #E3F2FD;
+}
+
+.DayPicker-day.is-selected {
+  background-color: #2196F3;
+  color: white;
+}

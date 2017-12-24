@@ -6,13 +6,16 @@ import Data.Array ((..), elemIndex, replicate)
 import Data.Date (Date, Weekday(..), Day)
 import Data.Date as Date
 import Data.DateTime as DateTime
-import Data.Time.Duration as Duration
 import Data.Enum (fromEnum, toEnum)
+import Data.Generic.Rep (class Generic)
+import Data.Generic.Rep.Show (genericShow)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Time.Duration as Duration
 
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
+import Halogen.HTML.Properties as HP
 
 weekdays :: Array Weekday
 weekdays = [ Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday ]
@@ -26,19 +29,35 @@ pprWeekday Friday = "金"
 pprWeekday Saturday = "土"
 pprWeekday Sunday = "日"
 
+data SelectedDate
+  = None
+  | Single Date
+
+derive instance genericRepSelectedDate :: Generic SelectedDate _
+instance showSelectedDate :: Show SelectedDate where show = genericShow
+
 data Query a
-  = Click Date a
+  = HandleInput Input a
+  | Click Date a
   | PrevMonth a
   | NextMonth a
 
 type State =
   { today :: Date
   , firstDateOfFirstMonth :: Date
+  , selectedDate :: SelectedDate
   }
 
-type Input = Date
+type Input =
+  { today :: Date
+  , selectedDate :: SelectedDate
+  }
 
 type Message = Date
+
+isDateSelected :: SelectedDate -> Date -> Boolean
+isDateSelected None _ = false
+isDateSelected (Single d) date = d == date
 
 firstDateOfMonth :: Date -> Date
 firstDateOfMonth date =
@@ -79,22 +98,28 @@ renderTableHeader =
   where
     render' day = HH.td_ [ HH.text $ pprWeekday day ]
 
-renderDay :: Date -> Maybe Day -> H.ComponentHTML Query
-renderDay _ Nothing = HH.td_ [ HH.text "" ]
-renderDay firstDate (Just day) =
+renderDay :: State -> Date -> Maybe Day -> H.ComponentHTML Query
+renderDay _ _ Nothing = HH.td_ [ HH.text "" ]
+renderDay state firstDate (Just day) =
   HH.td
-    [ HE.onClick $ HE.input (const $ Click clickedDay) ]
-    [ HH.text $ show $ fromEnum day ]
+    [ HP.class_ $ HH.ClassName className
+    , HE.onClick $ HE.input (const $ Click date)
+    ]
+    [ HH.text $ show $ fromEnum day
+    -- , HH.text $ show $ isDateSelected state.s
+    ]
   where
     year = Date.year firstDate
     month = Date.month firstDate
-    clickedDay = Date.canonicalDate year month day
+    date = Date.canonicalDate year month day
+    className = if isDateSelected state.selectedDate date
+                then "DayPicker-day is-selected" else "DayPicker-day"
 
-renderDayRow :: Date -> Int -> Day -> Int -> H.ComponentHTML Query
-renderDayRow firstDate firstDayColIndex lastDay rowIndex =
+renderDayRow :: State -> Date -> Int -> Day -> Int -> H.ComponentHTML Query
+renderDayRow state firstDate firstDayColIndex lastDay rowIndex =
   HH.tr_ $
-    replicate startCol (renderDay firstDate Nothing) <>
-    map (renderDay firstDate <<< toEnum) (startDayInt .. endDayInt)
+    replicate startCol (renderDay state firstDate Nothing) <>
+    map (renderDay state firstDate <<< toEnum) (startDayInt .. endDayInt)
   where
     startCol = if rowIndex == 0 then firstDayColIndex else 0
     startDayInt = if rowIndex == 0 then 1 else 7 * rowIndex - firstDayColIndex + 1
@@ -104,7 +129,7 @@ renderDayRow firstDate firstDayColIndex lastDay rowIndex =
 renderTableBody :: State -> H.ComponentHTML Query
 renderTableBody state =
   HH.tbody_ $
-    map (renderDayRow firstDate firstDayColIndex lastDay) (0 .. lastRowIndex)
+    map (renderDayRow state firstDate firstDayColIndex lastDay) (0 .. lastRowIndex)
   where
     firstDate = state.firstDateOfFirstMonth
     weekdayOfFirstDay = Date.weekday firstDate
@@ -114,8 +139,10 @@ renderTableBody state =
 
 render :: State -> H.ComponentHTML Query
 render state =
-  HH.div_
-    [ HH.div_
+  HH.div
+    [ HP.class_ $ HH.ClassName "DayPicker" ]
+    [ HH.div
+        [ HP.class_ $ HH.ClassName "DayPicker-head" ]
         [ HH.button
             [ HE.onClick (HE.input_ PrevMonth) ] [ HH.text "prev" ]
         , HH.text headText
@@ -138,21 +165,25 @@ dayPicker =
     { initialState: initialState
     , render
     , eval
-    , receiver: const Nothing
+    , receiver: HE.input HandleInput
     }
   where
 
   initialState :: Input -> State
-  initialState today =
+  initialState { today, selectedDate } =
     let year = Date.year today
         month = Date.month today
         firstDateOfFirstMonth = Date.canonicalDate year month bottom
      in
         { today: today
         , firstDateOfFirstMonth: firstDateOfFirstMonth
+        , selectedDate: selectedDate
         }
 
   eval :: Query ~> H.ComponentDSL State Query Message m
+  eval (HandleInput input next) = do
+    H.modify $ _{ selectedDate = input.selectedDate }
+    pure next
   eval (Click date next) = do
     H.raise date
     pure next
