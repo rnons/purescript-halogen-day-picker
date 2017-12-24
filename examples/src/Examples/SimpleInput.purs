@@ -9,13 +9,14 @@ import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 
+import Halogen.DayPicker as DayPicker
 import Halogen.DayPickerInput as DayPickerInput
 
 data Query a
   = HandleDayPicker DayPickerInput.Message a
 
 type State =
-  { selectedDate :: Maybe Date
+  { selectedDate :: DayPicker.SelectedDate
   }
 
 type Slot = Unit
@@ -31,7 +32,7 @@ component today =
   where
 
   initialState :: State
-  initialState = { selectedDate: Nothing }
+  initialState = { selectedDate: DayPicker.None }
 
   render :: State -> H.ParentHTML Query DayPickerInput.Query Slot m
   render state =
@@ -41,13 +42,16 @@ component today =
       , HH.p_
           [ HH.text $ "Click input to show a calendar" ]
       , HH.slot unit
-          (DayPickerInput.dayPickerInput today)
-          state.selectedDate
+          DayPickerInput.dayPickerInput
+          input
           (HE.input HandleDayPicker)
       ]
+    where
+    dayPickerInput = (DayPicker.defaultInput today) { selectedDate = state.selectedDate }
+    input = { dayPickerInput: dayPickerInput }
 
   eval :: Query ~> H.ParentDSL State Query DayPickerInput.Query Slot Void m
   eval = case _ of
     HandleDayPicker date next -> do
-      H.modify $ _{ selectedDate = Just date }
+      H.modify $ _{ selectedDate = DayPicker.Single date }
       pure next

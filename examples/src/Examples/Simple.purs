@@ -37,20 +37,17 @@ component today =
 
   render :: State -> H.ParentHTML Query DayPicker.Query Slot m
   render state =
-    let input =
-          { today: today
-          , selectedDate: state.selectedDate
-          }
-     in
-        HH.div_
-          [ HH.h1_
-              [ HH.text "Simple day picker" ]
-          , HH.p_
-              [ HH.text $ "Click to select a day" ]
-          , HH.div_
-              [ HH.slot DayPickerSlot DayPicker.dayPicker input (HE.input HandleDayPicker) ]
-          , HH.text $ "You selected " <> show state.selectedDate
-          ]
+    HH.div_
+      [ HH.h1_
+          [ HH.text "Simple day picker" ]
+      , HH.p_
+          [ HH.text $ "Click to select a day" ]
+      , HH.div_
+          [ HH.slot DayPickerSlot DayPicker.dayPicker input (HE.input HandleDayPicker) ]
+      , HH.text $ "You selected " <> show state.selectedDate
+      ]
+    where
+    input = (DayPicker.defaultInput today) { selectedDate = state.selectedDate }
 
   eval :: Query ~> H.ParentDSL State Query DayPicker.Query Slot Void m
   eval = case _ of

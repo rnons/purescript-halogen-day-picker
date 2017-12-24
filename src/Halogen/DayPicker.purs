@@ -51,6 +51,7 @@ type State =
 type Input =
   { today :: Date
   , selectedDate :: SelectedDate
+  , numberOfMonths :: Int
   }
 
 type Message = Date
@@ -58,6 +59,13 @@ type Message = Date
 isDateSelected :: SelectedDate -> Date -> Boolean
 isDateSelected None _ = false
 isDateSelected (Single d) date = d == date
+
+defaultInput :: Date -> Input
+defaultInput today =
+  { today: today
+  , selectedDate: None
+  , numberOfMonths: 1
+  }
 
 firstDateOfMonth :: Date -> Date
 firstDateOfMonth date =

@@ -13,23 +13,24 @@ import DOM.HTML.Indexed.InputType (InputType(InputText))
 
 import Halogen.DayPicker as DayPicker
 
-type Input = Maybe Date
+type Input =
+  { dayPickerInput :: DayPicker.Input
+  }
 
 data Query a
   = HandleInput Input a
   | HandleDayPicker DayPicker.Message a
 
 type State =
-  { today :: Date
-  , selectedDate :: Maybe Date
+  { dayPickerInput :: DayPicker.Input
   }
 
 type Message = Date
 
 type Slot = Unit
 
-dayPickerInput :: forall m. Date -> H.Component HH.HTML Query Input Message m
-dayPickerInput today =
+dayPickerInput :: forall m. H.Component HH.HTML Query Input Message m
+dayPickerInput =
   H.parentComponent
     { initialState: initialState
     , render
@@ -39,26 +40,20 @@ dayPickerInput today =
   where
 
   initialState :: Input -> State
-  initialState input =
-    { today: today
-    , selectedDate: input
+  initialState { dayPickerInput } =
+    { dayPickerInput: dayPickerInput
     }
 
   render :: State -> H.ParentHTML Query DayPicker.Query Unit m
   render state =
-    let input =
-          { today: today
-          , selectedDate: DayPicker.None
-          }
-     in
-        HH.div_
-          [ HH.input [ HP.type_ InputText, HP.value $ show state.selectedDate ]
-          , HH.slot unit DayPicker.dayPicker input (HE.input HandleDayPicker)
-          ]
+      HH.div_
+        [ HH.input [ HP.type_ InputText, HP.value $ show state.dayPickerInput.selectedDate ]
+        , HH.slot unit DayPicker.dayPicker state.dayPickerInput (HE.input HandleDayPicker)
+        ]
 
   eval :: Query ~> H.ParentDSL State Query DayPicker.Query Slot Message m
-  eval (HandleInput selectedDate next) = do
-    H.modify $ _{ selectedDate = selectedDate }
+  eval (HandleInput { dayPickerInput } next) = do
+    H.modify $ _{ dayPickerInput = dayPickerInput }
     pure next
   eval (HandleDayPicker date next) = do
     H.raise date
