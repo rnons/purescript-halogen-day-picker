@@ -11,7 +11,7 @@
   flex: 1;
 }
 
-.DayPicker {
+.DayPicker-month {
   display: inline-block;
   font-family: sans-serif;
   user-select: none;

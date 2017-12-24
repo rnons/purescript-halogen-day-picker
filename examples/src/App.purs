@@ -5,8 +5,8 @@ import Prelude
 import Data.Maybe (Maybe(..))
 import Data.Date (Date)
 
-import Data.Either.Nested (Either2)
-import Data.Functor.Coproduct.Nested (Coproduct2)
+import Data.Either.Nested (Either3)
+import Data.Functor.Coproduct.Nested (Coproduct3)
 
 import Halogen as H
 import Halogen.Component.ChildPath as CP
@@ -18,6 +18,7 @@ import Halogen.DayPicker as DayPicker
 import Route (Route(..))
 import Examples.Simple as ExpSimple
 import Examples.SimpleInput as ExpSimpleInput
+import Examples.RangeWithTwoInputs as ExpRangeInputs
 
 data Query a
   = DayPickerChange DayPicker.Message a
@@ -28,15 +29,17 @@ type State =
   , route :: Route
   }
 
-type ChildQuery = Coproduct2 ExpSimple.Query ExpSimpleInput.Query
+type ChildQuery = Coproduct3 ExpSimple.Query ExpSimpleInput.Query ExpRangeInputs.Query
 
-type Slot = Either2 Unit Unit
+type Slot = Either3 Unit Unit Unit
 
 renderMain :: forall m. Route -> Date -> H.ParentHTML Query ChildQuery Slot m
 renderMain Simple today =
   HH.slot' CP.cp1 unit (ExpSimple.component today) unit absurd
 renderMain SimpleInput today =
   HH.slot' CP.cp2 unit (ExpSimpleInput.component today) unit absurd
+renderMain RangeWithTwoInputs today =
+  HH.slot' CP.cp3 unit (ExpRangeInputs.component today) unit absurd
 renderMain _ today =
   HH.text "main body"
 
@@ -67,6 +70,10 @@ app today =
               , HH.li_
                   [ HH.a [ HP.href $ show SimpleInput ]
                       [ HH.text "Simple day picker input" ]
+                  ]
+              , HH.li_
+                  [ HH.a [ HP.href $ show RangeWithTwoInputs ]
+                      [ HH.text "Range with two inputs" ]
                   ]
               ]
           ]
