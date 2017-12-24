@@ -106,6 +106,9 @@ firstDateOfNextMonth date =
 class_ :: forall r i. String -> HP.IProp ("class" :: String | r) i
 class_ = HP.class_ <<< HH.ClassName
 
+classes :: forall r i. Array String -> HP.IProp ("class" :: String | r) i
+classes = HP.classes <<< map HH.ClassName
+
 renderTableHeader :: H.ComponentHTML Query
 renderTableHeader =
   HH.thead_
@@ -158,13 +161,19 @@ renderMonth state index =
     [ HH.div
         [ class_ "DayPicker-head" ]
         [ HH.button
-            [ class_ "DayPicker-control DayPicker-control--prev"
+            [ classes
+                [ "DayPicker-control"
+                , if showPrev then "DayPicker-control--prev" else "is-hidden"
+                ]
             , HE.onClick (HE.input_ PrevMonth)
             ]
             []
         , HH.text headText
         , HH.button
-            [ class_ "DayPicker-control DayPicker-control--next"
+            [ classes
+                [ "DayPicker-control"
+                , if showNext then "DayPicker-control--next" else "is-hidden"
+                ]
             , HE.onClick (HE.input_ NextMonth)
             ]
             []
@@ -180,6 +189,8 @@ renderMonth state index =
     yearStr = show $ fromEnum $ Date.year firstDate
     monthStr = show $ fromEnum $ Date.month firstDate
     headText = yearStr <> "年" <> monthStr <> "月"
+    showPrev = index == 0
+    showNext = index + 1 == state.numberOfMonths
 
 render :: State -> H.ComponentHTML Query
 render state =
