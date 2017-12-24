@@ -90,6 +90,9 @@ firstDateOfNextMonth date =
     dateTime = DateTime.DateTime lastDate bottom
     newDateTime = DateTime.adjust (Duration.Days 1.0) dateTime
 
+class_ :: forall r i. String -> HP.IProp ("class" :: String | r) i
+class_ = HP.class_ <<< HH.ClassName
+
 renderTableHeader :: H.ComponentHTML Query
 renderTableHeader =
   HH.thead_
@@ -102,11 +105,10 @@ renderDay :: State -> Date -> Maybe Day -> H.ComponentHTML Query
 renderDay _ _ Nothing = HH.td_ [ HH.text "" ]
 renderDay state firstDate (Just day) =
   HH.td
-    [ HP.class_ $ HH.ClassName className
+    [ class_ className
     , HE.onClick $ HE.input (const $ Click date)
     ]
     [ HH.text $ show $ fromEnum day
-    -- , HH.text $ show $ isDateSelected state.s
     ]
   where
     year = Date.year firstDate
@@ -140,16 +142,23 @@ renderTableBody state =
 render :: State -> H.ComponentHTML Query
 render state =
   HH.div
-    [ HP.class_ $ HH.ClassName "DayPicker" ]
+    [ class_ "DayPicker" ]
     [ HH.div
-        [ HP.class_ $ HH.ClassName "DayPicker-head" ]
+        [ class_ "DayPicker-head" ]
         [ HH.button
-            [ HE.onClick (HE.input_ PrevMonth) ] [ HH.text "prev" ]
+            [ class_ "DayPicker-control DayPicker-control--prev"
+            , HE.onClick (HE.input_ PrevMonth)
+            ]
+            []
         , HH.text headText
         , HH.button
-            [ HE.onClick (HE.input_ NextMonth) ] [ HH.text "next" ]
+            [ class_ "DayPicker-control DayPicker-control--next"
+            , HE.onClick (HE.input_ NextMonth)
+            ]
+            []
         ]
-    , HH.table_
+    , HH.table
+        [ class_ "DayPicker-body" ]
         [ renderTableHeader
         , renderTableBody state
         ]

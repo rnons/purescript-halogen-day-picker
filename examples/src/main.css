@@ -14,16 +14,57 @@
 .DayPicker {
   display: inline-block;
   font-family: sans-serif;
+  user-select: none;
 }
 
 .DayPicker-head {
   display: flex;
+  align-items: center;
   justify-content: space-between;
+}
+
+.DayPicker-control {
+  outline: none;
+  background: none;
+  box-shadow: none;
+  border: none;
+  padding: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+}
+
+.DayPicker-control:hover {
+  background-color: #F5F5F5;
+}
+
+.DayPicker-control::before {
+  content: '';
+  display: inline-block;
+  border-top: 0.375rem solid transparent;
+  border-bottom: 0.375rem solid transparent;
+}
+
+.DayPicker-control--prev::before {
+  border-right: 0.5625rem solid #9E9E9E;
+  margin-left: -1px;
+}
+
+.DayPicker-control--next::before {
+  border-left: 0.5625rem solid #9E9E9E;
+  margin-left: 1px;
+}
+
+.DayPicker-body {
+  border-collapse: collapse;
 }
 
 .DayPicker-day {
   padding: 0.5rem;
-  border-radius: 50%;
+  /* border-radius: 50%; */
   text-align: center;
   cursor: pointer;
 }
