@@ -2,7 +2,7 @@ module Halogen.DayPicker where
 
 import Prelude
 
-import Data.Array ((..), elemIndex, replicate)
+import Data.Array ((..), elemIndex, foldl, mapWithIndex, replicate)
 import Data.Date (Date, Weekday(..), Day)
 import Data.Date as Date
 import Data.DateTime as DateTime
@@ -46,6 +46,7 @@ type State =
   { today :: Date
   , firstDateOfFirstMonth :: Date
   , selectedDate :: SelectedDate
+  , numberOfMonths :: Int
   }
 
 type Input =
@@ -55,6 +56,10 @@ type Input =
   }
 
 type Message = Date
+
+applyN :: forall a. Int -> (a -> a) -> a -> a
+applyN n fn val =
+    foldl (\acc _ -> fn acc) val (replicate n unit)
 
 isDateSelected :: SelectedDate -> Date -> Boolean
 isDateSelected None _ = false
@@ -136,21 +141,20 @@ renderDayRow state firstDate firstDayColIndex lastDay rowIndex =
     endDayInt = if startDayInt + 6 < fromEnum lastDay
                 then startDayInt + 6 - startCol else fromEnum lastDay
 
-renderTableBody :: State -> H.ComponentHTML Query
-renderTableBody state =
+renderTableBody :: State -> Date -> H.ComponentHTML Query
+renderTableBody state firstDate =
   HH.tbody_ $
     map (renderDayRow state firstDate firstDayColIndex lastDay) (0 .. lastRowIndex)
   where
-    firstDate = state.firstDateOfFirstMonth
     weekdayOfFirstDay = Date.weekday firstDate
     firstDayColIndex = fromMaybe 0 $ elemIndex weekdayOfFirstDay weekdays
     lastDay = Date.day $ lastDateOfMonth firstDate
     lastRowIndex = (firstDayColIndex + fromEnum lastDay - 1) / 7
 
-render :: State -> H.ComponentHTML Query
-render state =
+renderMonth :: State -> Int -> H.ComponentHTML Query
+renderMonth state index =
   HH.div
-    [ class_ "DayPicker" ]
+    [ class_ "DayPicker-month" ]
     [ HH.div
         [ class_ "DayPicker-head" ]
         [ HH.button
@@ -168,13 +172,20 @@ render state =
     , HH.table
         [ class_ "DayPicker-body" ]
         [ renderTableHeader
-        , renderTableBody state
+        , renderTableBody state firstDate
         ]
     ]
   where
-    yearStr = show $ fromEnum $ Date.year state.firstDateOfFirstMonth
-    monthStr = show $ fromEnum $ Date.month state.firstDateOfFirstMonth
+    firstDate = applyN index firstDateOfNextMonth state.firstDateOfFirstMonth
+    yearStr = show $ fromEnum $ Date.year firstDate
+    monthStr = show $ fromEnum $ Date.month firstDate
     headText = yearStr <> "年" <> monthStr <> "月"
+
+render :: State -> H.ComponentHTML Query
+render state =
+  HH.div
+    [ class_ "DayPicker" ]
+    $ mapWithIndex (\index _ -> renderMonth state index) (1..state.numberOfMonths)
 
 dayPicker :: forall m. H.Component HH.HTML Query Input Message m
 dayPicker =
@@ -187,15 +198,16 @@ dayPicker =
   where
 
   initialState :: Input -> State
-  initialState { today, selectedDate } =
-    let year = Date.year today
-        month = Date.month today
-        firstDateOfFirstMonth = Date.canonicalDate year month bottom
-     in
-        { today: today
-        , firstDateOfFirstMonth: firstDateOfFirstMonth
-        , selectedDate: selectedDate
-        }
+  initialState { today, selectedDate, numberOfMonths } =
+    { today: today
+    , firstDateOfFirstMonth: firstDateOfFirstMonth
+    , selectedDate: selectedDate
+    , numberOfMonths: numberOfMonths
+    }
+    where
+    year = Date.year today
+    month = Date.month today
+    firstDateOfFirstMonth = Date.canonicalDate year month bottom
 
   eval :: Query ~> H.ComponentDSL State Query Message m
   eval (HandleInput input next) = do
