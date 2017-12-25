@@ -27,6 +27,7 @@ import Halogen.HTML.Events as HE
 import Halogen.Query.EventSource as ES
 
 import Halogen.DayPicker as DayPicker
+import Halogen.DayPickerStyles as Styles
 
 type Effects m
   = Aff ( dom :: DOM
@@ -76,13 +77,17 @@ dayPickerInput = H.lifecycleParentComponent
   render :: State -> H.ParentHTML Query DayPicker.Query Unit (Effects m)
   render state =
     HH.div
-      [ HP.ref rootRef ]
+      [ HP.class_ Styles.dayPickerInput
+      , HP.ref rootRef
+      ]
       [ HH.input
           [ HP.type_ InputText
           , HP.value $ show state.dayPickerInput.selectedDate
           , HE.onFocus $ HE.input_ Focus
           ]
-      , if state.focused then dayPicker else HH.text ""
+      , if state.focused
+        then HH.div [ HP.class_ Styles.dayPickerInputDropdown ] [ dayPicker ]
+        else HH.text ""
       ]
     where
     dayPicker =
@@ -114,9 +119,12 @@ dayPickerInput = H.lifecycleParentComponent
   eval (Focus next) = do
     H.modify $ _{ focused = true }
     pure next
+
   eval (HandleInput { dayPickerInput } next) = do
     H.modify $ _{ dayPickerInput = dayPickerInput }
     pure next
+
   eval (HandleDayPicker date next) = do
+    H.modify $ _{ focused = false }
     H.raise date
     pure next
