@@ -12,15 +12,20 @@ import Halogen.HTML.Events as HE
 import Halogen.DayPicker as DayPicker
 import Halogen.DayPickerInput (Effects)
 import Halogen.DayPickerInput as DayPickerInput
+import Examples.Utils (class_)
 
 data Query a
-  = HandleDayPicker DayPickerInput.Message a
+  = HandlePickerFrom DayPickerInput.Message a
+  | HandlePickerTo DayPickerInput.Message a
 
 type State =
   { selectedDate :: DayPicker.SelectedDate
   }
 
-type Slot = Unit
+data Slot = SlotFrom | SlotTo
+derive instance eqSlot :: Eq Slot
+derive instance ordSlot :: Ord Slot
+
 
 component :: forall m. Date -> H.Component HH.HTML Query Unit Void (Effects m)
 component today =
@@ -41,11 +46,20 @@ component today =
       [ HH.h1_
           [ HH.text "Simple day picker input" ]
       , HH.p_
-          [ HH.text $ "Click input to show a calendar" ]
-      , HH.slot unit
-          DayPickerInput.dayPickerInput
-          input
-          (HE.input HandleDayPicker)
+          [ HH.text "Click input to show a calendar" ]
+      , HH.div
+          [ class_ "row"]
+          [ HH.slot SlotFrom
+              DayPickerInput.dayPickerInput
+              input
+              (HE.input HandlePickerFrom)
+          , HH.slot SlotTo
+              DayPickerInput.dayPickerInput
+              input
+              (HE.input HandlePickerTo)
+          ]
+      , HH.p_
+          [ HH.text "hello world" ]
       ]
     where
     dayPickerInput = (DayPicker.defaultInput today)
@@ -56,6 +70,8 @@ component today =
 
   eval :: Query ~> H.ParentDSL State Query DayPickerInput.Query Slot Void (Effects m)
   eval = case _ of
-    HandleDayPicker date next -> do
+    HandlePickerFrom date next -> do
       H.modify $ _{ selectedDate = DayPicker.Single date }
+      pure next
+    HandlePickerTo date next -> do
       pure next

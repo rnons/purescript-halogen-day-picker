@@ -11,3 +11,14 @@
   flex: 1;
 }
 
+.row {
+  display: flex;
+}
+
+/*-----------*/
+/* Overrides */
+/*-----------*/
+
+.DayPicker {
+  white-space: nowrap;
+}
