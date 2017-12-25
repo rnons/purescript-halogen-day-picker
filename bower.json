@@ -14,7 +14,8 @@
   "dependencies": {
     "purescript-halogen": "^3.0.1",
     "purescript-datetime": "^3.4.1",
-    "purescript-generics-rep": "^5.4.0"
+    "purescript-generics-rep": "^5.4.0",
+    "purescript-dom-classy": "^2.1.0"
   },
   "devDependencies": {
     "purescript-psci-support": "^3.0.0"

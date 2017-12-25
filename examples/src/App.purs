@@ -14,6 +14,7 @@ import Halogen.HTML as HH
 import Halogen.HTML.Properties as HP
 
 import Halogen.DayPicker as DayPicker
+import Halogen.DayPickerInput (Effects)
 
 import Route (Route(..))
 import Examples.Simple as ExpSimple
@@ -33,7 +34,7 @@ type ChildQuery = Coproduct3 ExpSimple.Query ExpSimpleInput.Query ExpRangeInputs
 
 type Slot = Either3 Unit Unit Unit
 
-renderMain :: forall m. Route -> Date -> H.ParentHTML Query ChildQuery Slot m
+renderMain :: forall m. Route -> Date -> H.ParentHTML Query ChildQuery Slot (Effects m)
 renderMain Simple today =
   HH.slot' CP.cp1 unit (ExpSimple.component today) unit absurd
 renderMain SimpleInput today =
@@ -43,7 +44,7 @@ renderMain RangeWithTwoInputs today =
 renderMain _ today =
   HH.text "main body"
 
-app :: forall m. Date -> H.Component HH.HTML Query Unit Void m
+app :: forall m. Date -> H.Component HH.HTML Query Unit Void (Effects m)
 app today =
   H.parentComponent
     { initialState: const initialState
@@ -56,7 +57,7 @@ app today =
   initialState :: State
   initialState = { selectedDate: Nothing, route: Home }
 
-  render :: State -> H.ParentHTML Query ChildQuery Slot m
+  render :: State -> H.ParentHTML Query ChildQuery Slot (Effects m)
   render state =
     HH.div [ HP.class_ $ HH.ClassName "container" ]
       [ HH.div [ HP.class_ $ HH.ClassName "sidebar" ]
@@ -81,7 +82,7 @@ app today =
           [ renderMain state.route today ]
       ]
 
-  eval :: Query ~> H.ParentDSL State Query ChildQuery Slot Void m
+  eval :: Query ~> H.ParentDSL State Query ChildQuery Slot Void (Effects m)
   eval = case _ of
     DayPickerChange date next -> do
       H.modify (\state -> state { selectedDate = Just date })

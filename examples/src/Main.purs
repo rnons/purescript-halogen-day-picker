@@ -5,7 +5,9 @@ import Prelude
 import Control.Monad.Aff (launchAff_)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
+import Control.Monad.Eff.Console (CONSOLE)
 import Control.Monad.Eff.Now (NOW, nowDate)
+
 import Data.DateTime.Locale (LocalValue(..))
 
 import Routing (matches)
@@ -17,8 +19,7 @@ import Halogen.VDom.Driver (runUI)
 import Route (routing)
 import App (app, Query(RouteChange))
 
-
-main :: Eff (HA.HalogenEffects (now :: NOW)) Unit
+main :: Eff (HA.HalogenEffects (console :: CONSOLE, now :: NOW)) Unit
 main = do
   LocalValue _ date <- nowDate
   HA.runHalogenAff do
