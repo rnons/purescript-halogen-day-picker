@@ -17,6 +17,8 @@ import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
 
+import Halogen.DayPicker.Styles (Styles, defaultStyles)
+
 weekdays :: Array Weekday
 weekdays = [ Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday ]
 
@@ -44,11 +46,13 @@ data DisabledDate
 derive instance genericRepSelectedDate :: Generic SelectedDate _
 instance showSelectedDate :: Show SelectedDate where show = genericShow
 
-data Query a
-  = OnReceiveProps Props a
-  | Click Date a
-  | PrevMonth a
-  | NextMonth a
+type Props =
+  { today :: Date
+  , selectedDate :: SelectedDate
+  , disabledDate :: DisabledDate
+  , numberOfMonths :: Int
+  , styles :: Styles
+  }
 
 type State =
   { today :: Date
@@ -56,14 +60,14 @@ type State =
   , selectedDate :: SelectedDate
   , disabledDate :: DisabledDate
   , numberOfMonths :: Int
+  , styles :: Styles
   }
 
-type Props =
-  { today :: Date
-  , selectedDate :: SelectedDate
-  , disabledDate :: DisabledDate
-  , numberOfMonths :: Int
-  }
+data Query a
+  = OnReceiveProps Props a
+  | Click Date a
+  | PrevMonth a
+  | NextMonth a
 
 type Message = Date
 
@@ -89,7 +93,18 @@ defaultProps today =
   , selectedDate: NoneSelected
   , disabledDate: NoneDisabled
   , numberOfMonths: 1
+  , styles: defaultStyles
   }
+
+updateStateWithProps :: Props -> State -> State
+updateStateWithProps { today, selectedDate, disabledDate, numberOfMonths, styles } =
+  _{ today = today
+   , selectedDate = selectedDate
+   , disabledDate = disabledDate
+   , numberOfMonths = numberOfMonths
+   , firstDateOfFirstMonth = getFirstDateOfFirstMonth selectedDate today
+   , styles = styles
+   }
 
 firstDateOfMonth :: Date -> Date
 firstDateOfMonth date =
@@ -127,33 +142,18 @@ getFirstDateOfFirstMonth (Single date) _ = firstDateOfMonth date
 getFirstDateOfFirstMonth (FromTo (Just date) _) _ = firstDateOfMonth date
 getFirstDateOfFirstMonth _ today = firstDateOfMonth today
 
-updateStateWithProps :: Props -> State -> State
-updateStateWithProps { today, selectedDate, disabledDate, numberOfMonths } =
-  _{ today = today
-   , selectedDate = selectedDate
-   , disabledDate = disabledDate
-   , numberOfMonths = numberOfMonths
-   , firstDateOfFirstMonth = getFirstDateOfFirstMonth selectedDate today
-   }
-
-class_ :: forall r i. String -> HP.IProp ("class" :: String | r) i
-class_ = HP.class_ <<< HH.ClassName
-
-classes :: forall r i. Array String -> HP.IProp ("class" :: String | r) i
-classes = HP.classes <<< map HH.ClassName
-
-renderTableHeader :: H.ComponentHTML Query
-renderTableHeader =
+renderTableHeader :: Styles -> H.ComponentHTML Query
+renderTableHeader styles =
   HH.thead_
     [ HH.tr_ (map render' weekdays)
     ]
   where
     render' day =
-      HH.td [ class_ "DayPicker-weekday" ] [ HH.text $ pprWeekday day ]
+      HH.td [ HP.class_ styles.weekday ] [ HH.text $ pprWeekday day ]
 
 renderDay :: State -> Date -> Maybe Day -> H.ComponentHTML Query
 renderDay _ _ Nothing = HH.td_ [ HH.text "" ]
-renderDay state firstDate (Just day) =
+renderDay state@{ styles } firstDate (Just day) =
   HH.td
     props
     [ HH.text $ show $ fromEnum day
@@ -164,13 +164,13 @@ renderDay state firstDate (Just day) =
     date = Date.canonicalDate year month day
     isDisabled = isDateDisabled state.disabledDate date
     className =
-      if isDisabled then "DayPicker-day is-disabled" else
+      if isDisabled then styles.dayDisabled else
         if isDateSelected state.selectedDate date
-        then "DayPicker-day is-selected" else "DayPicker-day"
+        then styles.daySelected else styles.day
     props =
       if isDisabled
-      then [ class_ className ]
-      else [ class_ className, HE.onClick $ HE.input (const $ Click date) ]
+      then [ HP.class_ className ]
+      else [ HP.class_ className, HE.onClick $ HE.input (const $ Click date) ]
 
 renderDayRow :: State -> Date -> Int -> Day -> Int -> H.ComponentHTML Query
 renderDayRow state firstDate firstDayColIndex lastDay rowIndex =
@@ -194,32 +194,32 @@ renderTableBody state firstDate =
     lastRowIndex = (firstDayColIndex + fromEnum lastDay - 1) / 7
 
 renderMonth :: State -> Int -> H.ComponentHTML Query
-renderMonth state index =
+renderMonth state@{ styles } index =
   HH.div
-    [ class_ "DayPicker-month" ]
+    [ HP.class_ styles.month ]
     [ HH.div
-        [ class_ "DayPicker-head" ]
+        [ HP.class_ styles.head ]
         [ HH.button
-            [ classes
-                [ "DayPicker-control"
-                , if showPrev then "DayPicker-control--prev" else "is-hidden"
+            [ HP.classes
+                [ styles.control
+                , if showPrev then styles.controlPrev else styles.controlHidden
                 ]
             , HE.onClick (HE.input_ PrevMonth)
             ]
             []
         , HH.text headText
         , HH.button
-            [ classes
-                [ "DayPicker-control"
-                , if showNext then "DayPicker-control--next" else "is-hidden"
+            [ HP.classes
+                [ styles.control
+                , if showNext then styles.controlNext else styles.controlHidden
                 ]
             , HE.onClick (HE.input_ NextMonth)
             ]
             []
         ]
     , HH.table
-        [ class_ "DayPicker-body" ]
-        [ renderTableHeader
+        [ HP.class_ styles.body ]
+        [ renderTableHeader styles
         , renderTableBody state firstDate
         ]
     ]
@@ -232,9 +232,9 @@ renderMonth state index =
     showNext = index + 1 == state.numberOfMonths
 
 render :: State -> H.ComponentHTML Query
-render state =
+render state@{ styles } =
   HH.div
-    [ class_ "DayPicker" ]
+    [ HP.class_ styles.root ]
     $ mapWithIndex (\index _ -> renderMonth state index) (1..state.numberOfMonths)
 
 dayPicker :: forall m. H.Component HH.HTML Query Props Message m
@@ -248,12 +248,13 @@ dayPicker =
   where
 
   initialState :: Props -> State
-  initialState { today, selectedDate, disabledDate, numberOfMonths } =
+  initialState { today, selectedDate, disabledDate, numberOfMonths, styles } =
     { today: today
     , firstDateOfFirstMonth: getFirstDateOfFirstMonth selectedDate today
     , selectedDate: selectedDate
     , disabledDate: disabledDate
     , numberOfMonths: numberOfMonths
+    , styles: styles
     }
 
   eval :: Query ~> H.ComponentDSL State Query Message m
