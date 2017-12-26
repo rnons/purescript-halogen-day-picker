@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Monad.Aff (Aff, delay, forkAff, liftEff')
 import Control.Monad.Aff.AVar (AVAR)
-import Control.Monad.Eff.Console (CONSOLE, log)
+import Control.Monad.Eff.Console (CONSOLE)
 
 import Data.Enum (class BoundedEnum, fromEnum)
 import Data.Date (Date)
@@ -32,7 +32,7 @@ import Halogen.HTML.Events as HE
 import Halogen.Query.EventSource as ES
 
 import Halogen.DayPicker as DayPicker
-import Halogen.DayPickerStyles as Styles
+import Halogen.DayPickerInput.Styles (Styles, defaultStyles)
 
 type Effects m
   = Aff ( dom :: DOM
@@ -43,6 +43,16 @@ type Props =
   { dayPickerProps :: DayPicker.Props
   , value :: Maybe Date
   , placeholder :: String
+  , styles :: Styles
+  , formatDate :: Date -> String
+  }
+
+type State =
+  { dayPickerProps :: DayPicker.Props
+  , focused :: Boolean
+  , value :: Maybe Date
+  , placeholder :: String
+  , styles :: Styles
   , formatDate :: Date -> String
   }
 
@@ -53,14 +63,6 @@ data Query a
   | OnFocus a
   | OnReceiveProps Props a
   | HandleDayPicker DayPicker.Message a
-
-type State =
-  { dayPickerProps :: DayPicker.Props
-  , focused :: Boolean
-  , value :: Maybe Date
-  , placeholder :: String
-  , formatDate :: Date -> String
-  }
 
 type Message = Date
 
@@ -87,14 +89,16 @@ defaultProps dayPickerProps =
   { dayPickerProps: dayPickerProps
   , value: Nothing
   , placeholder: "YYYY-M-D"
+  , styles: defaultStyles
   , formatDate: defaultFormatDate
   }
 
 updateStateWithProps :: Props -> State -> State
-updateStateWithProps { dayPickerProps, value, placeholder, formatDate } =
+updateStateWithProps { dayPickerProps, value, placeholder, styles, formatDate } =
   _{ dayPickerProps = dayPickerProps
    , value = value
    , placeholder = placeholder
+   , styles = styles
    , formatDate = formatDate
    }
 
@@ -116,30 +120,31 @@ dayPickerInput = H.lifecycleParentComponent
   where
 
   initialState :: Props -> State
-  initialState { dayPickerProps, value, placeholder, formatDate } =
+  initialState { dayPickerProps, value, placeholder, styles, formatDate } =
     { dayPickerProps: dayPickerProps
     , focused: false
     , value: value
     , placeholder: placeholder
+    , styles: styles
     , formatDate: formatDate
     }
 
   render :: State -> H.ParentHTML Query DayPicker.Query Unit (Effects m)
-  render state =
+  render state@{ styles } =
     HH.div
-      [ HP.class_ Styles.dayPickerInput
+      [ HP.class_ styles.dayPickerInput
       , HP.ref rootRef
       ]
       [ HH.input
           [ HP.type_ InputText
-          , HP.class_ Styles.dayPickerInputInput
+          , HP.class_ styles.dayPickerInputInput
           , HP.value value
           , HP.placeholder state.placeholder
           , HP.ref inputRef
           , HE.onFocus $ HE.input_ OnFocus
           ]
       , if state.focused
-        then HH.div [ HP.class_ Styles.dayPickerInputDropdown ] [ dayPicker ]
+        then HH.div [ HP.class_ styles.dayPickerInputDropdown ] [ dayPicker ]
         else HH.text ""
       ]
     where
