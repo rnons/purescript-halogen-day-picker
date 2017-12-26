@@ -5,7 +5,10 @@ import Prelude
 import Control.Monad.Aff (Aff, delay, forkAff, liftEff')
 import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Eff.Console (CONSOLE, log)
+
+import Data.Enum (class BoundedEnum, fromEnum)
 import Data.Date (Date)
+import Data.Date as Date
 import Data.Maybe (Maybe(..))
 import Data.Time.Duration (Milliseconds(..))
 
@@ -38,6 +41,9 @@ type Effects m
 
 type Input =
   { dayPickerInput :: DayPicker.Input
+  , value :: Maybe Date
+  , placeholder :: String
+  , formatDate :: Date -> String
   }
 
 data Query a
@@ -51,11 +57,46 @@ data Query a
 type State =
   { dayPickerInput :: DayPicker.Input
   , focused :: Boolean
+  , value :: Maybe Date
+  , placeholder :: String
+  , formatDate :: Date -> String
   }
 
 type Message = Date
 
 type Slot = Unit
+
+defaultFormatDate :: Date -> String
+defaultFormatDate date =
+  year <> "-" <> month <> "-" <> day
+  where
+  cs :: forall a. BoundedEnum a => a -> String
+  cs = show <<< fromEnum
+  year = cs $ Date.year date
+  month = cs $ Date.month date
+  day = cs $ Date.day date
+
+defaultInputFromDate :: Date -> Input
+defaultInputFromDate today =
+  defaultInput dayPickerInput
+  where
+  dayPickerInput = DayPicker.defaultInput today
+
+defaultInput :: DayPicker.Input -> Input
+defaultInput dayPickerInput =
+  { dayPickerInput: dayPickerInput
+  , value: Nothing
+  , placeholder: "YYYY-M-D"
+  , formatDate: defaultFormatDate
+  }
+
+updateStateWithInput :: Input -> State -> State
+updateStateWithInput { dayPickerInput, value, placeholder, formatDate } =
+  _{ dayPickerInput = dayPickerInput
+   , value = value
+   , placeholder = placeholder
+   , formatDate = formatDate
+   }
 
 rootRef :: H.RefLabel
 rootRef = H.RefLabel "root"
@@ -75,9 +116,12 @@ dayPickerInput = H.lifecycleParentComponent
   where
 
   initialState :: Input -> State
-  initialState { dayPickerInput } =
+  initialState { dayPickerInput, value, placeholder, formatDate } =
     { dayPickerInput: dayPickerInput
     , focused: false
+    , value: value
+    , placeholder: placeholder
+    , formatDate: formatDate
     }
 
   render :: State -> H.ParentHTML Query DayPicker.Query Unit (Effects m)
@@ -88,7 +132,9 @@ dayPickerInput = H.lifecycleParentComponent
       ]
       [ HH.input
           [ HP.type_ InputText
-          , HP.value $ show state.dayPickerInput.selectedDate
+          , HP.class_ Styles.dayPickerInputInput
+          , HP.value value
+          , HP.placeholder state.placeholder
           , HP.ref inputRef
           , HE.onFocus $ HE.input_ OnFocus
           ]
@@ -99,6 +145,10 @@ dayPickerInput = H.lifecycleParentComponent
     where
     dayPicker =
       HH.slot unit DayPicker.dayPicker state.dayPickerInput (HE.input HandleDayPicker)
+    value =
+      case state.value of
+        Nothing -> ""
+        Just date -> state.formatDate date
 
   eval :: Query ~> H.ParentDSL State Query DayPicker.Query Slot Message (Effects m)
   eval (Init next) = do
@@ -137,8 +187,8 @@ dayPickerInput = H.lifecycleParentComponent
     H.modify $ _{ focused = true }
     pure next
 
-  eval (HandleInput { dayPickerInput } next) = do
-    H.modify $ _{ dayPickerInput = dayPickerInput }
+  eval (HandleInput input next) = do
+    H.modify $ updateStateWithInput input
     pure next
 
   eval (HandleDayPicker date next) = do

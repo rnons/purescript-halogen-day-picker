@@ -2,6 +2,10 @@
   position: relative;
 }
 
+.DayPickerInput-input {
+  text-align: center;
+}
+
 .DayPickerInput-dropdown {
   position: absolute;
   top: 100%;

@@ -77,8 +77,24 @@ component today =
         FromTo (Just from) _ ->
           dayPickerInput { disabledDate = Before from }
         _ -> dayPickerInput
-    fromInput = { dayPickerInput: pickerFromInput }
-    toInput = { dayPickerInput: pickerToInput }
+    getFrom =
+      case _ of
+        FromTo from _ -> from
+        _ -> Nothing
+    getTo =
+      case _ of
+        FromTo _ to -> to
+        _ -> Nothing
+    fromInput =
+      (DayPickerInput.defaultInput pickerFromInput)
+        { placeholder = "FROM"
+        , value = getFrom state.selectedDate
+        }
+    toInput =
+      (DayPickerInput.defaultInput pickerToInput)
+        { placeholder = "TO"
+        , value = getTo state.selectedDate
+        }
 
   eval :: Query ~> H.ParentDSL State Query DayPickerInput.Query Slot Void (Effects m)
   eval = case _ of
