@@ -2,11 +2,12 @@ module Halogen.DayPickerInput where
 
 import Prelude
 
-import Control.Monad.Aff (Aff)
+import Control.Monad.Aff (Aff, delay, forkAff, liftEff')
 import Control.Monad.Aff.AVar (AVAR)
-import Control.Monad.Eff.Console (CONSOLE)
+import Control.Monad.Eff.Console (CONSOLE, log)
 import Data.Date (Date)
 import Data.Maybe (Maybe(..))
+import Data.Time.Duration (Milliseconds(..))
 
 import DOM (DOM)
 import DOM.Event.Types (Event)
@@ -14,6 +15,7 @@ import DOM.Event.EventTarget as Etr
 import DOM.HTML (window)
 import DOM.HTML.Event.EventTypes as Etp
 import DOM.HTML.Types (htmlDocumentToEventTarget, htmlElementToNode)
+import DOM.HTML.HTMLElement (focus)
 import DOM.HTML.Indexed.InputType (InputType(InputText))
 import DOM.HTML.Window (document)
 import DOM.Node.Node (contains, isEqualNode)
@@ -42,6 +44,7 @@ data Query a
   = Init a
   | ClickDocument Event a
   | Focus a
+  | OnFocus a
   | HandleInput Input a
   | HandleDayPicker DayPicker.Message a
 
@@ -56,6 +59,9 @@ type Slot = Unit
 
 rootRef :: H.RefLabel
 rootRef = H.RefLabel "root"
+
+inputRef :: H.RefLabel
+inputRef = H.RefLabel "input"
 
 dayPickerInput :: forall m. H.Component HH.HTML Query Input Message (Effects m)
 dayPickerInput = H.lifecycleParentComponent
@@ -83,7 +89,8 @@ dayPickerInput = H.lifecycleParentComponent
       [ HH.input
           [ HP.type_ InputText
           , HP.value $ show state.dayPickerInput.selectedDate
-          , HE.onFocus $ HE.input_ Focus
+          , HP.ref inputRef
+          , HE.onFocus $ HE.input_ OnFocus
           ]
       , if state.focused
         then HH.div [ HP.class_ Styles.dayPickerInputDropdown ] [ dayPicker ]
@@ -117,6 +124,16 @@ dayPickerInput = H.lifecycleParentComponent
       Nothing -> pure next
 
   eval (Focus next) = do
+    mInput <- H.getHTMLElementRef inputRef
+    case mInput of
+      Just input -> do
+        _ <- H.liftAff $ forkAff $ do
+          delay $ Milliseconds 10.0
+          liftEff' $ focus input
+        pure next
+      Nothing -> pure next
+
+  eval (OnFocus next) = do
     H.modify $ _{ focused = true }
     pure next
 

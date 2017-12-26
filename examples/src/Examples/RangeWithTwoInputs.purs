@@ -72,6 +72,7 @@ component today =
   eval = case _ of
     HandlePickerFrom date next -> do
       H.modify $ _{ selectedDate = DayPicker.Single date }
+      _ <- H.query SlotTo $ H.action DayPickerInput.Focus
       pure next
     HandlePickerTo date next -> do
       pure next
