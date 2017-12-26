@@ -33,7 +33,7 @@ component today =
   where
 
   initialState :: State
-  initialState = { selectedDate: DayPicker.None }
+  initialState = { selectedDate: DayPicker.NoneSelected }
 
   render :: State -> H.ParentHTML Query DayPickerInput.Query Slot (Effects m)
   render state =

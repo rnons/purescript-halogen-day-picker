@@ -58,6 +58,10 @@
   border-collapse: collapse;
 }
 
+.DayPicker-weekday {
+  text-align: center;
+}
+
 .DayPicker-day {
   padding: 0.5rem;
   text-align: center;
@@ -71,4 +75,8 @@
 .DayPicker-day.is-selected {
   background-color: #2196F3;
   color: white;
+}
+
+.DayPicker-day.is-disabled {
+  color: #E0E0E0;
 }

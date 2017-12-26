@@ -31,9 +31,15 @@ pprWeekday Sunday = "日"
 
 -- TODO: support `Set Date`
 data SelectedDate
-  = None
+  = NoneSelected
   | Single Date
   | FromTo (Maybe Date) (Maybe Date)
+
+-- TODO: support `Set Date` and `Date -> Boolean`
+data DisabledDate
+  = NoneDisabled
+  | Before Date
+  | After Date
 
 derive instance genericRepSelectedDate :: Generic SelectedDate _
 instance showSelectedDate :: Show SelectedDate where show = genericShow
@@ -48,12 +54,14 @@ type State =
   { today :: Date
   , firstDateOfFirstMonth :: Date
   , selectedDate :: SelectedDate
+  , disabledDate :: DisabledDate
   , numberOfMonths :: Int
   }
 
 type Input =
   { today :: Date
   , selectedDate :: SelectedDate
+  , disabledDate :: DisabledDate
   , numberOfMonths :: Int
   }
 
@@ -64,15 +72,21 @@ applyN n fn val =
     foldl (\acc _ -> fn acc) val (replicate n unit)
 
 isDateSelected :: SelectedDate -> Date -> Boolean
-isDateSelected None _ = false
+isDateSelected NoneSelected _ = false
 isDateSelected (Single d) date = d == date
 isDateSelected (FromTo (Just from) (Just to)) date = from <= date && date <= to
 isDateSelected (FromTo _ _) date = false
 
+isDateDisabled :: DisabledDate -> Date -> Boolean
+isDateDisabled NoneDisabled _ = false
+isDateDisabled (Before d) date = date < d
+isDateDisabled (After d) date = date > d
+
 defaultInput :: Date -> Input
 defaultInput today =
   { today: today
-  , selectedDate: None
+  , selectedDate: NoneSelected
+  , disabledDate: NoneDisabled
   , numberOfMonths: 1
   }
 
@@ -119,23 +133,29 @@ renderTableHeader =
     [ HH.tr_ (map render' weekdays)
     ]
   where
-    render' day = HH.td_ [ HH.text $ pprWeekday day ]
+    render' day =
+      HH.td [ class_ "DayPicker-weekday" ] [ HH.text $ pprWeekday day ]
 
 renderDay :: State -> Date -> Maybe Day -> H.ComponentHTML Query
 renderDay _ _ Nothing = HH.td_ [ HH.text "" ]
 renderDay state firstDate (Just day) =
   HH.td
-    [ class_ className
-    , HE.onClick $ HE.input (const $ Click date)
-    ]
+    props
     [ HH.text $ show $ fromEnum day
     ]
   where
     year = Date.year firstDate
     month = Date.month firstDate
     date = Date.canonicalDate year month day
-    className = if isDateSelected state.selectedDate date
-                then "DayPicker-day is-selected" else "DayPicker-day"
+    isDisabled = isDateDisabled state.disabledDate date
+    className =
+      if isDisabled then "DayPicker-day is-disabled" else
+        if isDateSelected state.selectedDate date
+        then "DayPicker-day is-selected" else "DayPicker-day"
+    props =
+      if isDisabled
+      then [ class_ className ]
+      else [ class_ className, HE.onClick $ HE.input (const $ Click date) ]
 
 renderDayRow :: State -> Date -> Int -> Day -> Int -> H.ComponentHTML Query
 renderDayRow state firstDate firstDayColIndex lastDay rowIndex =
@@ -213,10 +233,11 @@ dayPicker =
   where
 
   initialState :: Input -> State
-  initialState { today, selectedDate, numberOfMonths } =
+  initialState { today, selectedDate, disabledDate, numberOfMonths } =
     { today: today
     , firstDateOfFirstMonth: firstDateOfFirstMonth
     , selectedDate: selectedDate
+    , disabledDate: disabledDate
     , numberOfMonths: numberOfMonths
     }
     where
