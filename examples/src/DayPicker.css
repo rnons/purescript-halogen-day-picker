@@ -65,14 +65,15 @@
 .DayPicker-day {
   padding: 0.5rem;
   text-align: center;
+}
+
+.DayPicker-day:not(.is-disabled):hover {
+  background-color: #E3F2FD;
   cursor: pointer;
 }
 
-.DayPicker-day:hover {
-  background-color: #E3F2FD;
-}
-
-.DayPicker-day.is-selected {
+.DayPicker-day.is-selected,
+.DayPicker-day.is-selected:hover {
   background-color: #2196F3;
   color: white;
 }

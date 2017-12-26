@@ -75,6 +75,7 @@ isDateSelected :: SelectedDate -> Date -> Boolean
 isDateSelected NoneSelected _ = false
 isDateSelected (Single d) date = d == date
 isDateSelected (FromTo (Just from) (Just to)) date = from <= date && date <= to
+isDateSelected (FromTo (Just from) _) date = from == date
 isDateSelected (FromTo _ _) date = false
 
 isDateDisabled :: DisabledDate -> Date -> Boolean
@@ -120,6 +121,20 @@ firstDateOfNextMonth date =
     lastDate = lastDateOfMonth date
     dateTime = DateTime.DateTime lastDate bottom
     newDateTime = DateTime.adjust (Duration.Days 1.0) dateTime
+
+getFirstDateOfFirstMonth :: SelectedDate -> Date -> Date
+getFirstDateOfFirstMonth (Single date) _ = firstDateOfMonth date
+getFirstDateOfFirstMonth (FromTo (Just date) _) _ = firstDateOfMonth date
+getFirstDateOfFirstMonth _ today = firstDateOfMonth today
+
+updateStateWithInput :: Input -> State -> State
+updateStateWithInput { today, selectedDate, disabledDate, numberOfMonths } =
+  _{ today = today
+   , selectedDate = selectedDate
+   , disabledDate = disabledDate
+   , numberOfMonths = numberOfMonths
+   , firstDateOfFirstMonth = getFirstDateOfFirstMonth selectedDate today
+   }
 
 class_ :: forall r i. String -> HP.IProp ("class" :: String | r) i
 class_ = HP.class_ <<< HH.ClassName
@@ -235,19 +250,15 @@ dayPicker =
   initialState :: Input -> State
   initialState { today, selectedDate, disabledDate, numberOfMonths } =
     { today: today
-    , firstDateOfFirstMonth: firstDateOfFirstMonth
+    , firstDateOfFirstMonth: getFirstDateOfFirstMonth selectedDate today
     , selectedDate: selectedDate
     , disabledDate: disabledDate
     , numberOfMonths: numberOfMonths
     }
-    where
-    year = Date.year today
-    month = Date.month today
-    firstDateOfFirstMonth = Date.canonicalDate year month bottom
 
   eval :: Query ~> H.ComponentDSL State Query Message m
   eval (HandleInput input next) = do
-    H.modify $ _{ selectedDate = input.selectedDate }
+    H.modify $ updateStateWithInput input
     pure next
   eval (Click date next) = do
     H.raise date
