@@ -45,7 +45,7 @@ derive instance genericRepSelectedDate :: Generic SelectedDate _
 instance showSelectedDate :: Show SelectedDate where show = genericShow
 
 data Query a
-  = HandleInput Input a
+  = OnReceiveProps Props a
   | Click Date a
   | PrevMonth a
   | NextMonth a
@@ -58,7 +58,7 @@ type State =
   , numberOfMonths :: Int
   }
 
-type Input =
+type Props =
   { today :: Date
   , selectedDate :: SelectedDate
   , disabledDate :: DisabledDate
@@ -83,8 +83,8 @@ isDateDisabled NoneDisabled _ = false
 isDateDisabled (Before d) date = date < d
 isDateDisabled (After d) date = date > d
 
-defaultInput :: Date -> Input
-defaultInput today =
+defaultProps :: Date -> Props
+defaultProps today =
   { today: today
   , selectedDate: NoneSelected
   , disabledDate: NoneDisabled
@@ -127,8 +127,8 @@ getFirstDateOfFirstMonth (Single date) _ = firstDateOfMonth date
 getFirstDateOfFirstMonth (FromTo (Just date) _) _ = firstDateOfMonth date
 getFirstDateOfFirstMonth _ today = firstDateOfMonth today
 
-updateStateWithInput :: Input -> State -> State
-updateStateWithInput { today, selectedDate, disabledDate, numberOfMonths } =
+updateStateWithProps :: Props -> State -> State
+updateStateWithProps { today, selectedDate, disabledDate, numberOfMonths } =
   _{ today = today
    , selectedDate = selectedDate
    , disabledDate = disabledDate
@@ -237,17 +237,17 @@ render state =
     [ class_ "DayPicker" ]
     $ mapWithIndex (\index _ -> renderMonth state index) (1..state.numberOfMonths)
 
-dayPicker :: forall m. H.Component HH.HTML Query Input Message m
+dayPicker :: forall m. H.Component HH.HTML Query Props Message m
 dayPicker =
   H.component
     { initialState: initialState
     , render
     , eval
-    , receiver: HE.input HandleInput
+    , receiver: HE.input OnReceiveProps
     }
   where
 
-  initialState :: Input -> State
+  initialState :: Props -> State
   initialState { today, selectedDate, disabledDate, numberOfMonths } =
     { today: today
     , firstDateOfFirstMonth: getFirstDateOfFirstMonth selectedDate today
@@ -257,8 +257,8 @@ dayPicker =
     }
 
   eval :: Query ~> H.ComponentDSL State Query Message m
-  eval (HandleInput input next) = do
-    H.modify $ updateStateWithInput input
+  eval (OnReceiveProps input next) = do
+    H.modify $ updateStateWithProps input
     pure next
   eval (Click date next) = do
     H.raise date

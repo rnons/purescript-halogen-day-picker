@@ -52,31 +52,31 @@ component today =
           [ class_ "row"]
           [ HH.slot SlotFrom
               DayPickerInput.dayPickerInput
-              fromInput
+              fromProps
               (HE.input HandlePickerFrom)
           , HH.slot SlotTo
               DayPickerInput.dayPickerInput
-              toInput
+              toProps
               (HE.input HandlePickerTo)
           ]
       , HH.p_
           [ HH.text "hello world" ]
       ]
     where
-    dayPickerInput = (DayPicker.defaultInput today)
+    dayPickerProps = (DayPicker.defaultProps today)
               { selectedDate = state.selectedDate
               , numberOfMonths = 2
               }
-    pickerFromInput =
+    pickerFromProps =
       case state.selectedDate of
         FromTo _ (Just to) ->
-          dayPickerInput { disabledDate = After to }
-        _ -> dayPickerInput
-    pickerToInput =
+          dayPickerProps { disabledDate = After to }
+        _ -> dayPickerProps
+    pickerToProps =
       case state.selectedDate of
         FromTo (Just from) _ ->
-          dayPickerInput { disabledDate = Before from }
-        _ -> dayPickerInput
+          dayPickerProps { disabledDate = Before from }
+        _ -> dayPickerProps
     getFrom =
       case _ of
         FromTo from _ -> from
@@ -85,13 +85,13 @@ component today =
       case _ of
         FromTo _ to -> to
         _ -> Nothing
-    fromInput =
-      (DayPickerInput.defaultInput pickerFromInput)
+    fromProps =
+      (DayPickerInput.defaultProps pickerFromProps)
         { placeholder = "FROM"
         , value = getFrom state.selectedDate
         }
-    toInput =
-      (DayPickerInput.defaultInput pickerToInput)
+    toProps =
+      (DayPickerInput.defaultProps pickerToProps)
         { placeholder = "TO"
         , value = getTo state.selectedDate
         }

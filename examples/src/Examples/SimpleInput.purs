@@ -45,16 +45,16 @@ component today =
           [ HH.text $ "Click input to show a calendar" ]
       , HH.slot unit
           DayPickerInput.dayPickerInput
-          input
+          props
           (HE.input HandleDayPicker)
       ]
     where
-    dayPickerInput = (DayPicker.defaultInput today) { selectedDate = state.selectedDate }
+    dayPickerProps = (DayPicker.defaultProps today) { selectedDate = state.selectedDate }
     value =
       case state.selectedDate of
         Single date -> Just date
         _ -> Nothing
-    input = (DayPickerInput.defaultInput dayPickerInput) { value = value }
+    props = (DayPickerInput.defaultProps dayPickerProps) { value = value }
 
   eval :: Query ~> H.ParentDSL State Query DayPickerInput.Query Slot Void (Effects m)
   eval = case _ of

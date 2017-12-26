@@ -47,7 +47,7 @@ component today =
       , HH.text $ "You selected " <> show state.selectedDate
       ]
     where
-    input = (DayPicker.defaultInput today) { selectedDate = state.selectedDate }
+    input = (DayPicker.defaultProps today) { selectedDate = state.selectedDate }
 
   eval :: Query ~> H.ParentDSL State Query DayPicker.Query Slot Void m
   eval = case _ of

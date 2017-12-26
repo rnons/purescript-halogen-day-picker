@@ -39,8 +39,8 @@ type Effects m
         , avar :: AVAR
         , console :: CONSOLE | m)
 
-type Input =
-  { dayPickerInput :: DayPicker.Input
+type Props =
+  { dayPickerProps :: DayPicker.Props
   , value :: Maybe Date
   , placeholder :: String
   , formatDate :: Date -> String
@@ -51,11 +51,11 @@ data Query a
   | ClickDocument Event a
   | Focus a
   | OnFocus a
-  | HandleInput Input a
+  | OnReceiveProps Props a
   | HandleDayPicker DayPicker.Message a
 
 type State =
-  { dayPickerInput :: DayPicker.Input
+  { dayPickerProps :: DayPicker.Props
   , focused :: Boolean
   , value :: Maybe Date
   , placeholder :: String
@@ -76,23 +76,23 @@ defaultFormatDate date =
   month = cs $ Date.month date
   day = cs $ Date.day date
 
-defaultInputFromDate :: Date -> Input
-defaultInputFromDate today =
-  defaultInput dayPickerInput
+defaultPropsFromDate :: Date -> Props
+defaultPropsFromDate today =
+  defaultProps dayPickerProps
   where
-  dayPickerInput = DayPicker.defaultInput today
+  dayPickerProps = DayPicker.defaultProps today
 
-defaultInput :: DayPicker.Input -> Input
-defaultInput dayPickerInput =
-  { dayPickerInput: dayPickerInput
+defaultProps :: DayPicker.Props -> Props
+defaultProps dayPickerProps =
+  { dayPickerProps: dayPickerProps
   , value: Nothing
   , placeholder: "YYYY-M-D"
   , formatDate: defaultFormatDate
   }
 
-updateStateWithInput :: Input -> State -> State
-updateStateWithInput { dayPickerInput, value, placeholder, formatDate } =
-  _{ dayPickerInput = dayPickerInput
+updateStateWithProps :: Props -> State -> State
+updateStateWithProps { dayPickerProps, value, placeholder, formatDate } =
+  _{ dayPickerProps = dayPickerProps
    , value = value
    , placeholder = placeholder
    , formatDate = formatDate
@@ -104,20 +104,20 @@ rootRef = H.RefLabel "root"
 inputRef :: H.RefLabel
 inputRef = H.RefLabel "input"
 
-dayPickerInput :: forall m. H.Component HH.HTML Query Input Message (Effects m)
+dayPickerInput :: forall m. H.Component HH.HTML Query Props Message (Effects m)
 dayPickerInput = H.lifecycleParentComponent
   { initialState: initialState
   , render
   , eval
-  , receiver: HE.input HandleInput
+  , receiver: HE.input OnReceiveProps
   , initializer: Just $ H.action Init
   , finalizer: Nothing
   }
   where
 
-  initialState :: Input -> State
-  initialState { dayPickerInput, value, placeholder, formatDate } =
-    { dayPickerInput: dayPickerInput
+  initialState :: Props -> State
+  initialState { dayPickerProps, value, placeholder, formatDate } =
+    { dayPickerProps: dayPickerProps
     , focused: false
     , value: value
     , placeholder: placeholder
@@ -144,7 +144,7 @@ dayPickerInput = H.lifecycleParentComponent
       ]
     where
     dayPicker =
-      HH.slot unit DayPicker.dayPicker state.dayPickerInput (HE.input HandleDayPicker)
+      HH.slot unit DayPicker.dayPicker state.dayPickerProps (HE.input HandleDayPicker)
     value =
       case state.value of
         Nothing -> ""
@@ -187,8 +187,8 @@ dayPickerInput = H.lifecycleParentComponent
     H.modify $ _{ focused = true }
     pure next
 
-  eval (HandleInput input next) = do
-    H.modify $ updateStateWithInput input
+  eval (OnReceiveProps input next) = do
+    H.modify $ updateStateWithProps input
     pure next
 
   eval (HandleDayPicker date next) = do
