@@ -29,9 +29,11 @@ pprWeekday Friday = "金"
 pprWeekday Saturday = "土"
 pprWeekday Sunday = "日"
 
+-- TODO: support `Set Date`
 data SelectedDate
   = None
   | Single Date
+  | FromTo (Maybe Date) (Maybe Date)
 
 derive instance genericRepSelectedDate :: Generic SelectedDate _
 instance showSelectedDate :: Show SelectedDate where show = genericShow
@@ -64,6 +66,8 @@ applyN n fn val =
 isDateSelected :: SelectedDate -> Date -> Boolean
 isDateSelected None _ = false
 isDateSelected (Single d) date = d == date
+isDateSelected (FromTo (Just from) (Just to)) date = from <= date && date <= to
+isDateSelected (FromTo _ _) date = false
 
 defaultInput :: Date -> Input
 defaultInput today =

@@ -71,8 +71,19 @@ component today =
   eval :: Query ~> H.ParentDSL State Query DayPickerInput.Query Slot Void (Effects m)
   eval = case _ of
     HandlePickerFrom date next -> do
-      H.modify $ _{ selectedDate = DayPicker.Single date }
+      H.modify $ \state@{ selectedDate } ->
+        case selectedDate of
+          DayPicker.FromTo _ to ->
+            state { selectedDate = DayPicker.FromTo (Just date) to }
+          _ ->
+            state { selectedDate = DayPicker.FromTo (Just date) Nothing }
       _ <- H.query SlotTo $ H.action DayPickerInput.Focus
       pure next
     HandlePickerTo date next -> do
+      H.modify $ \state@{ selectedDate } ->
+        case selectedDate of
+          DayPicker.FromTo from _ ->
+            state { selectedDate = DayPicker.FromTo from (Just date) }
+          _ ->
+            state { selectedDate = DayPicker.FromTo Nothing (Just date) }
       pure next
