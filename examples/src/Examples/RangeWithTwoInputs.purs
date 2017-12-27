@@ -43,7 +43,8 @@ component today =
 
   render :: State -> H.ParentHTML Query DayPickerInput.Query Slot (Effects m)
   render state =
-    HH.div_
+    HH.div
+      [ class_ "example-range" ]
       [ HH.h1_
           [ HH.text "Simple day picker input" ]
       , HH.p_

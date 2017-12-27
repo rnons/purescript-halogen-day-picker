@@ -26,3 +26,15 @@ body {
 .DayPicker {
   white-space: nowrap;
 }
+
+.example-range .DayPicker-day.is-selected {
+  background-color: #E3F2FD;
+  color: #2196F3;
+}
+
+.example-range .DayPicker-day--from,
+.example-range .DayPicker-day--to {
+  background-color: #2196F3 !important;
+  color: white !important;
+}
+

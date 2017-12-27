@@ -80,6 +80,14 @@
   color: white;
 }
 
+.DayPicker-day--from {
+  border-radius: 50% 0 0 50%;
+}
+
+.DayPicker-day--to {
+  border-radius: 0 50% 50% 0;
+}
+
 .DayPicker-day.is-disabled {
   color: #E0E0E0;
 }
