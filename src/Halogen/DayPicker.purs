@@ -164,13 +164,14 @@ renderDay state@{ styles } firstDate (Just day) =
     date = Date.canonicalDate year month day
     isDisabled = isDateDisabled state.disabledDate date
     className =
-      if isDisabled then styles.dayDisabled else
+      if isDisabled then HP.classes [ styles.day, styles.dayIsDisabled ] else
         if isDateSelected state.selectedDate date
-        then styles.daySelected else styles.day
+        then HP.classes [ styles.day, styles.dayIsSelected ]
+        else HP.class_ styles.day
     props =
       if isDisabled
-      then [ HP.class_ className ]
-      else [ HP.class_ className, HE.onClick $ HE.input (const $ Click date) ]
+      then [ className ]
+      else [ className, HE.onClick $ HE.input (const $ Click date) ]
 
 renderDayRow :: State -> Date -> Int -> Day -> Int -> H.ComponentHTML Query
 renderDayRow state firstDate firstDayColIndex lastDay rowIndex =
@@ -202,7 +203,7 @@ renderMonth state@{ styles } index =
         [ HH.button
             [ HP.classes
                 [ styles.control
-                , if showPrev then styles.controlPrev else styles.controlHidden
+                , if showPrev then styles.controlPrev else styles.controlIsHidden
                 ]
             , HE.onClick (HE.input_ PrevMonth)
             ]
@@ -211,7 +212,7 @@ renderMonth state@{ styles } index =
         , HH.button
             [ HP.classes
                 [ styles.control
-                , if showNext then styles.controlNext else styles.controlHidden
+                , if showNext then styles.controlNext else styles.controlIsHidden
                 ]
             , HE.onClick (HE.input_ NextMonth)
             ]

@@ -132,19 +132,19 @@ dayPickerInput = H.lifecycleParentComponent
   render :: State -> H.ParentHTML Query DayPicker.Query Unit (Effects m)
   render state@{ styles } =
     HH.div
-      [ HP.class_ styles.dayPickerInput
+      [ HP.class_ styles.root
       , HP.ref rootRef
       ]
       [ HH.input
           [ HP.type_ InputText
-          , HP.class_ styles.dayPickerInputInput
+          , HP.class_ styles.input
           , HP.value value
           , HP.placeholder state.placeholder
           , HP.ref inputRef
           , HE.onFocus $ HE.input_ OnFocus
           ]
       , if state.focused
-        then HH.div [ HP.class_ styles.dayPickerInputDropdown ] [ dayPicker ]
+        then HH.div [ HP.class_ styles.dropdown ] [ dayPicker ]
         else HH.text ""
       ]
     where

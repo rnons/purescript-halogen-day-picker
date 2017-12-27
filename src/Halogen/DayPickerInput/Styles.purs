@@ -6,14 +6,14 @@ module Halogen.DayPickerInput.Styles
 import Halogen.HTML (ClassName(ClassName))
 
 type Styles =
-  { dayPickerInput :: ClassName
-  , dayPickerInputInput :: ClassName
-  , dayPickerInputDropdown :: ClassName
+  { root :: ClassName
+  , input :: ClassName
+  , dropdown :: ClassName
   }
 
 defaultStyles :: Styles
 defaultStyles =
-  { dayPickerInput: ClassName "DayPickerInput"
-  , dayPickerInputInput: ClassName "DayPickerInput-input"
-  , dayPickerInputDropdown: ClassName "DayPickerInput-dropdown"
+  { root: ClassName "DayPickerInput"
+  , input: ClassName "DayPickerInput-input"
+  , dropdown: ClassName "DayPickerInput-dropdown"
   }

@@ -12,12 +12,12 @@ type Styles =
   , control :: ClassName
   , controlPrev :: ClassName
   , controlNext :: ClassName
-  , controlHidden :: ClassName
+  , controlIsHidden :: ClassName
   , body :: ClassName
   , weekday :: ClassName
   , day :: ClassName
-  , daySelected :: ClassName
-  , dayDisabled :: ClassName
+  , dayIsSelected :: ClassName
+  , dayIsDisabled :: ClassName
   }
 
 defaultStyles :: Styles
@@ -28,10 +28,10 @@ defaultStyles =
   , control: ClassName "DayPicker-control"
   , controlPrev: ClassName "DayPicker-control--prev"
   , controlNext: ClassName "DayPicker-control--next"
-  , controlHidden: ClassName "is-hidden"
+  , controlIsHidden: ClassName "is-hidden"
   , body: ClassName "DayPicker-body"
   , weekday: ClassName "DayPicker-weekday"
   , day: ClassName "DayPicker-day"
-  , daySelected: ClassName "DayPicker-day is-selected"
-  , dayDisabled: ClassName "DayPicker-day is-disabled"
+  , dayIsSelected: ClassName "is-selected"
+  , dayIsDisabled: ClassName "is-disabled"
   }
