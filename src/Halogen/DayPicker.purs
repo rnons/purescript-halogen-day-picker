@@ -82,6 +82,14 @@ isDateSelected (FromTo (Just from) (Just to)) date = from <= date && date <= to
 isDateSelected (FromTo (Just from) _) date = from == date
 isDateSelected (FromTo _ _) date = false
 
+isDateFrom :: SelectedDate -> Date -> Boolean
+isDateFrom (FromTo (Just from) _) date = from == date
+isDateFrom _ _ = false
+
+isDateTo :: SelectedDate -> Date -> Boolean
+isDateTo (FromTo _ (Just to)) date = to == date
+isDateTo _ _ = false
+
 isDateDisabled :: DisabledDate -> Date -> Boolean
 isDateDisabled NoneDisabled _ = false
 isDateDisabled (Before d) date = date < d
@@ -153,7 +161,7 @@ renderTableHeader styles =
 
 renderDay :: State -> Date -> Maybe Day -> H.ComponentHTML Query
 renderDay _ _ Nothing = HH.td_ [ HH.text "" ]
-renderDay state@{ styles } firstDate (Just day) =
+renderDay state@{ styles, selectedDate } firstDate (Just day) =
   HH.td
     props
     [ HH.text $ show $ fromEnum day
@@ -163,15 +171,20 @@ renderDay state@{ styles } firstDate (Just day) =
     month = Date.month firstDate
     date = Date.canonicalDate year month day
     isDisabled = isDateDisabled state.disabledDate date
+    disabled =
+      if isDisabled then [ styles.dayIsDisabled ] else []
+    selected =
+      if isDateSelected state.selectedDate date then [ styles.dayIsSelected ] else []
+    from =
+      if isDateFrom state.selectedDate date then [ styles.dayFrom ] else []
+    to =
+      if isDateTo state.selectedDate date then [ styles.dayTo ] else []
     className =
-      if isDisabled then HP.classes [ styles.day, styles.dayIsDisabled ] else
-        if isDateSelected state.selectedDate date
-        then HP.classes [ styles.day, styles.dayIsSelected ]
-        else HP.class_ styles.day
+      [ styles.day ] <> from <> to <> disabled <> selected
     props =
       if isDisabled
-      then [ className ]
-      else [ className, HE.onClick $ HE.input (const $ Click date) ]
+      then [ HP.classes className ]
+      else [ HP.classes className, HE.onClick $ HE.input (const $ Click date) ]
 
 renderDayRow :: State -> Date -> Int -> Day -> Int -> H.ComponentHTML Query
 renderDayRow state firstDate firstDayColIndex lastDay rowIndex =
