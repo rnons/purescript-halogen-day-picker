@@ -2,7 +2,7 @@ module Examples.SimpleInput where
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Data.Date (Date)
 
 import Halogen as H
@@ -15,7 +15,7 @@ import Halogen.DayPickerInput (Effects)
 import Halogen.DayPickerInput as DayPickerInput
 
 data Query a
-  = HandleDayPicker DayPickerInput.Message a
+  = HandlePicker DayPickerInput.Message a
 
 type State =
   { selectedDate :: SelectedDate
@@ -46,7 +46,7 @@ component today =
       , HH.slot unit
           DayPickerInput.dayPickerInput
           props
-          (HE.input HandleDayPicker)
+          (HE.input HandlePicker)
       ]
     where
     dayPickerProps = (DayPicker.defaultProps today) { selectedDate = state.selectedDate }
@@ -57,7 +57,9 @@ component today =
     props = (DayPickerInput.defaultProps dayPickerProps) { value = value }
 
   eval :: Query ~> H.ParentDSL State Query DayPickerInput.Query Slot Void (Effects m)
-  eval = case _ of
-    HandleDayPicker date next -> do
+  eval (HandlePicker (DayPickerInput.Select date) next) = do
       H.modify $ _{ selectedDate = Single date }
+      pure next
+  eval (HandlePicker (DayPickerInput.Input mDate) next) = do
+      H.modify $ _{ selectedDate = maybe NoneSelected Single mDate }
       pure next

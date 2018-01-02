@@ -10,7 +10,7 @@ import Data.Enum (class BoundedEnum, fromEnum, toEnum)
 import Data.Date (Date)
 import Data.Date as Date
 import Data.Int as Int
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.String (Pattern(Pattern), split)
 import Data.Traversable (sequence)
 import Data.Time.Duration (Milliseconds(..))
@@ -89,7 +89,7 @@ defaultProps dayPickerProps =
 type State =
   { dayPickerProps :: DayPicker.Props
   , focused :: Boolean
-  , value :: Maybe Date
+  , value :: String
   , placeholder :: String
   , styles :: Styles
   , formatDate :: Date -> String
@@ -100,7 +100,7 @@ initialState :: Props -> State
 initialState { dayPickerProps, value, placeholder, styles, formatDate, parseDate } =
   { dayPickerProps
   , focused: false
-  , value
+  , value: maybe "" formatDate value
   , placeholder
   , styles
   , formatDate
@@ -108,9 +108,9 @@ initialState { dayPickerProps, value, placeholder, styles, formatDate, parseDate
   }
 
 updateStateWithProps :: Props -> State -> State
-updateStateWithProps { dayPickerProps, value, placeholder, styles, formatDate, parseDate } =
-  _{ dayPickerProps = dayPickerProps
-   , value = value
+updateStateWithProps { dayPickerProps, value, placeholder, styles, formatDate, parseDate } state =
+  state { dayPickerProps = dayPickerProps
+   , value = maybe state.value formatDate value
    , placeholder = placeholder
    , styles = styles
    , formatDate = formatDate
@@ -122,10 +122,13 @@ data Query a
   | ClickDocument Event a
   | Focus a
   | OnFocus a
+  | OnInput String a
   | OnReceiveProps Props a
   | HandleDayPicker DayPicker.Message a
 
-type Message = Date
+data Message
+  = Select Date
+  | Input (Maybe Date)
 
 type Slot = Unit
 
@@ -147,7 +150,7 @@ dayPickerInput = H.lifecycleParentComponent
   where
 
   render :: State -> H.ParentHTML Query DayPicker.Query Unit (Effects m)
-  render state@{ styles } =
+  render state@{ styles, value } =
     HH.div
       [ HP.class_ styles.root
       , HP.ref rootRef
@@ -159,6 +162,7 @@ dayPickerInput = H.lifecycleParentComponent
           , HP.placeholder state.placeholder
           , HP.ref inputRef
           , HE.onFocus $ HE.input_ OnFocus
+          , HE.onValueInput $ HE.input OnInput
           ]
       , if state.focused
         then HH.div [ HP.class_ styles.dropdown ] [ dayPicker ]
@@ -167,10 +171,6 @@ dayPickerInput = H.lifecycleParentComponent
     where
     dayPicker =
       HH.slot unit DayPicker.dayPicker state.dayPickerProps (HE.input HandleDayPicker)
-    value =
-      case state.value of
-        Nothing -> ""
-        Just date -> state.formatDate date
 
   eval :: Query ~> H.ParentDSL State Query DayPicker.Query Slot Message (Effects m)
   eval (Init next) = do
@@ -209,11 +209,15 @@ dayPickerInput = H.lifecycleParentComponent
     H.modify $ _{ focused = true }
     pure next
 
+  eval (OnInput value next) = do
+    H.gets _.parseDate >>= \parseDate -> H.raise $ Input $ parseDate value
+    pure next
+
   eval (OnReceiveProps input next) = do
     H.modify $ updateStateWithProps input
     pure next
 
   eval (HandleDayPicker date next) = do
     H.modify $ _{ focused = false }
-    H.raise date
+    H.raise $ Select date
     pure next
