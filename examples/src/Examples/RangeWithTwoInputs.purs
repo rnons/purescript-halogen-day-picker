@@ -9,7 +9,7 @@ import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 
-import Halogen.DayPicker (SelectedDate(..), DisabledDate(..))
+import Halogen.DayPicker (SelectedDate(FromTo), DisabledDate(..))
 import Halogen.DayPicker as DayPicker
 import Halogen.DayPickerInput (Effects)
 import Halogen.DayPickerInput as DayPickerInput
@@ -20,7 +20,8 @@ data Query a
   | HandlePickerTo DayPickerInput.Message a
 
 type State =
-  { selectedDate :: SelectedDate
+  { fromDate :: Maybe Date
+  , toDate :: Maybe Date
   }
 
 data Slot = SlotFrom | SlotTo
@@ -39,10 +40,13 @@ component today =
   where
 
   initialState :: State
-  initialState = { selectedDate: NoneSelected }
+  initialState =
+    { fromDate: Nothing
+    , toDate: Nothing
+    }
 
   render :: State -> H.ParentHTML Query DayPickerInput.Query Slot (Effects m)
-  render state =
+  render { fromDate, toDate } =
     HH.div
       [ class_ "example-range" ]
       [ HH.h1_
@@ -65,54 +69,36 @@ component today =
       ]
     where
     dayPickerProps = (DayPicker.defaultProps today)
-              { selectedDate = state.selectedDate
-              , numberOfMonths = 2
-              }
+      { selectedDate = FromTo fromDate toDate
+      , numberOfMonths = 2
+      }
     pickerFromProps =
-      case state.selectedDate of
-        FromTo _ (Just to) ->
+      case toDate of
+        Just to ->
           dayPickerProps { disabledDate = After to }
         _ -> dayPickerProps
     pickerToProps =
-      case state.selectedDate of
-        FromTo (Just from) _ ->
+      case fromDate of
+        Just from ->
           dayPickerProps { disabledDate = Before from }
         _ -> dayPickerProps
-    getFrom =
-      case _ of
-        FromTo from _ -> from
-        _ -> Nothing
-    getTo =
-      case _ of
-        FromTo _ to -> to
-        _ -> Nothing
     fromProps =
       (DayPickerInput.defaultProps pickerFromProps)
         { placeholder = "FROM"
-        , value = getFrom state.selectedDate
+        , value = fromDate
         }
     toProps =
       (DayPickerInput.defaultProps pickerToProps)
         { placeholder = "TO"
-        , value = getTo state.selectedDate
+        , value = toDate
         }
 
   eval :: Query ~> H.ParentDSL State Query DayPickerInput.Query Slot Void (Effects m)
   eval = case _ of
     HandlePickerFrom date next -> do
-      H.modify $ \state@{ selectedDate } ->
-        case selectedDate of
-          FromTo _ to ->
-            state { selectedDate = FromTo (Just date) to }
-          _ ->
-            state { selectedDate = FromTo (Just date) Nothing }
+      H.modify $ _{ fromDate = Just date}
       _ <- H.query SlotTo $ H.action DayPickerInput.Focus
       pure next
     HandlePickerTo date next -> do
-      H.modify $ \state@{ selectedDate } ->
-        case selectedDate of
-          FromTo from _ ->
-            state { selectedDate = FromTo from (Just date) }
-          _ ->
-            state { selectedDate = FromTo Nothing (Just date) }
+      H.modify $ _{ toDate = Just date }
       pure next
