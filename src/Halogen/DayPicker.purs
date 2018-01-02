@@ -22,14 +22,14 @@ import Halogen.DayPicker.Styles (Styles, defaultStyles)
 weekdays :: Array Weekday
 weekdays = [ Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday ]
 
-pprWeekday :: Weekday -> String
-pprWeekday Monday = "月"
-pprWeekday Tuesday = "火"
-pprWeekday Wednesday = "水"
-pprWeekday Thursday = "木"
-pprWeekday Friday = "金"
-pprWeekday Saturday = "土"
-pprWeekday Sunday = "日"
+defaultFormatWeekday :: Weekday -> String
+defaultFormatWeekday Monday = "M"
+defaultFormatWeekday Tuesday = "T"
+defaultFormatWeekday Wednesday = "W"
+defaultFormatWeekday Thursday = "T"
+defaultFormatWeekday Friday = "F"
+defaultFormatWeekday Saturday = "S"
+defaultFormatWeekday Sunday = "S"
 
 -- TODO: support `Set Date`
 data SelectedDate
@@ -52,6 +52,17 @@ type Props =
   , disabledDate :: DisabledDate
   , numberOfMonths :: Int
   , styles :: Styles
+  , formatWeekday :: Weekday -> String
+  }
+
+defaultProps :: Date -> Props
+defaultProps today =
+  { today: today
+  , selectedDate: NoneSelected
+  , disabledDate: NoneDisabled
+  , numberOfMonths: 1
+  , styles: defaultStyles
+  , formatWeekday: defaultFormatWeekday
   }
 
 type State =
@@ -62,6 +73,26 @@ type State =
   , numberOfMonths :: Int
   , styles :: Styles
   }
+
+initialState :: Props -> State
+initialState { today, selectedDate, disabledDate, numberOfMonths, styles } =
+  { today
+  , firstDateOfFirstMonth: getFirstDateOfFirstMonth selectedDate today
+  , selectedDate
+  , disabledDate
+  , numberOfMonths
+  , styles
+  }
+
+updateStateWithProps :: Props -> State -> State
+updateStateWithProps { today, selectedDate, disabledDate, numberOfMonths, styles } =
+  _{ today = today
+   , selectedDate = selectedDate
+   , disabledDate = disabledDate
+   , numberOfMonths = numberOfMonths
+   , firstDateOfFirstMonth = getFirstDateOfFirstMonth selectedDate today
+   , styles = styles
+   }
 
 data Query a
   = OnReceiveProps Props a
@@ -94,25 +125,6 @@ isDateDisabled :: DisabledDate -> Date -> Boolean
 isDateDisabled NoneDisabled _ = false
 isDateDisabled (Before d) date = date < d
 isDateDisabled (After d) date = date > d
-
-defaultProps :: Date -> Props
-defaultProps today =
-  { today: today
-  , selectedDate: NoneSelected
-  , disabledDate: NoneDisabled
-  , numberOfMonths: 1
-  , styles: defaultStyles
-  }
-
-updateStateWithProps :: Props -> State -> State
-updateStateWithProps { today, selectedDate, disabledDate, numberOfMonths, styles } =
-  _{ today = today
-   , selectedDate = selectedDate
-   , disabledDate = disabledDate
-   , numberOfMonths = numberOfMonths
-   , firstDateOfFirstMonth = getFirstDateOfFirstMonth selectedDate today
-   , styles = styles
-   }
 
 firstDateOfMonth :: Date -> Date
 firstDateOfMonth date =
@@ -157,7 +169,7 @@ renderTableHeader styles =
     ]
   where
     render' day =
-      HH.td [ HP.class_ styles.weekday ] [ HH.text $ pprWeekday day ]
+      HH.td [ HP.class_ styles.weekday ] [ HH.text $ defaultFormatWeekday day ]
 
 renderDay :: State -> Date -> Maybe Day -> H.ComponentHTML Query
 renderDay _ _ Nothing = HH.td_ [ HH.text "" ]
@@ -260,16 +272,6 @@ dayPicker =
     , receiver: HE.input OnReceiveProps
     }
   where
-
-  initialState :: Props -> State
-  initialState { today, selectedDate, disabledDate, numberOfMonths, styles } =
-    { today: today
-    , firstDateOfFirstMonth: getFirstDateOfFirstMonth selectedDate today
-    , selectedDate: selectedDate
-    , disabledDate: disabledDate
-    , numberOfMonths: numberOfMonths
-    , styles: styles
-    }
 
   eval :: Query ~> H.ComponentDSL State Query Message m
   eval (OnReceiveProps input next) = do

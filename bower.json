@@ -1,6 +1,6 @@
 {
-  "name": "purescript-day-picker",
-  "description": "A day picker in purescript",
+  "name": "purescript-halogen-day-picker",
+  "description": "A day picker in purescript halogen",
   "authors": [
     "Ping Chen <remotenonsense@gmail.com>"
   ],
@@ -9,7 +9,8 @@
     "**/.*",
     "node_modules",
     "bower_components",
-    "output"
+    "output",
+    "examples"
   ],
   "dependencies": {
     "purescript-halogen": "^3.0.1",
