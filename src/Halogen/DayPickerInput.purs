@@ -2,9 +2,8 @@ module Halogen.DayPickerInput where
 
 import Prelude
 
-import Control.Monad.Aff (Aff, delay, forkAff, liftEff')
-import Control.Monad.Aff.AVar (AVAR)
-import Control.Monad.Eff.Console (CONSOLE)
+import Control.Monad.Aff (delay, forkAff, liftEff')
+import Control.Monad.Aff.Class (class MonadAff)
 
 import Data.Enum (class BoundedEnum, fromEnum, toEnum)
 import Data.Date (Date)
@@ -15,7 +14,6 @@ import Data.String (Pattern(Pattern), split)
 import Data.Traversable (sequence)
 import Data.Time.Duration (Milliseconds(..))
 
-import DOM (DOM)
 import DOM.Event.Types (Event)
 import DOM.Event.EventTarget as Etr
 import DOM.HTML (window)
@@ -29,6 +27,7 @@ import DOM.Node.Node (contains, isEqualNode)
 import DOM.Classy.Event (target)
 
 import Halogen as H
+import Halogen.Aff (HalogenEffects)
 import Halogen.HTML as HH
 import Halogen.HTML.Properties as HP
 import Halogen.HTML.Events as HE
@@ -36,11 +35,6 @@ import Halogen.Query.EventSource as ES
 
 import Halogen.DayPicker as DayPicker
 import Halogen.DayPickerInput.Styles (Styles, defaultStyles)
-
-type Effects m
-  = Aff ( dom :: DOM
-        , avar :: AVAR
-        , console :: CONSOLE | m)
 
 defaultFormatDate :: Date -> String
 defaultFormatDate date =
@@ -138,7 +132,10 @@ rootRef = H.RefLabel "root"
 inputRef :: H.RefLabel
 inputRef = H.RefLabel "input"
 
-dayPickerInput :: forall m. H.Component HH.HTML Query Props Message (Effects m)
+dayPickerInput
+  :: forall eff m
+  . MonadAff (HalogenEffects eff) m
+  => H.Component HH.HTML Query Props Message m
 dayPickerInput = H.lifecycleParentComponent
   { initialState: initialState
   , render
@@ -149,7 +146,7 @@ dayPickerInput = H.lifecycleParentComponent
   }
   where
 
-  render :: State -> H.ParentHTML Query DayPicker.Query Unit (Effects m)
+  render :: State -> H.ParentHTML Query DayPicker.Query Unit m
   render state@{ styles, value } =
     HH.div
       [ HP.class_ styles.root
@@ -172,7 +169,7 @@ dayPickerInput = H.lifecycleParentComponent
     dayPicker =
       HH.slot unit DayPicker.dayPicker state.dayPickerProps (HE.input HandleDayPicker)
 
-  eval :: Query ~> H.ParentDSL State Query DayPicker.Query Slot Message (Effects m)
+  eval :: Query ~> H.ParentDSL State Query DayPicker.Query Slot Message m
   eval (Init next) = do
     doc <- H.liftEff $ window >>= document
     let docTarget = htmlDocumentToEventTarget doc

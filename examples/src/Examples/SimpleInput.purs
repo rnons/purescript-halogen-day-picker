@@ -11,8 +11,9 @@ import Halogen.HTML.Events as HE
 
 import Halogen.DayPicker (SelectedDate(..))
 import Halogen.DayPicker as DayPicker
-import Halogen.DayPickerInput (Effects)
 import Halogen.DayPickerInput as DayPickerInput
+
+import Examples.Types (AppM)
 
 data Query a
   = HandlePicker DayPickerInput.Message a
@@ -23,7 +24,7 @@ type State =
 
 type Slot = Unit
 
-component :: forall m. Date -> H.Component HH.HTML Query Unit Void (Effects m)
+component :: Date -> H.Component HH.HTML Query Unit Void AppM
 component today =
   H.parentComponent
     { initialState: const initialState
@@ -36,7 +37,7 @@ component today =
   initialState :: State
   initialState = { selectedDate: NoneSelected }
 
-  render :: State -> H.ParentHTML Query DayPickerInput.Query Slot (Effects m)
+  render :: State -> H.ParentHTML Query DayPickerInput.Query Slot AppM
   render state =
     HH.div_
       [ HH.h1_
@@ -56,7 +57,7 @@ component today =
         _ -> Nothing
     props = (DayPickerInput.defaultProps dayPickerProps) { value = value }
 
-  eval :: Query ~> H.ParentDSL State Query DayPickerInput.Query Slot Void (Effects m)
+  eval :: Query ~> H.ParentDSL State Query DayPickerInput.Query Slot Void AppM
   eval (HandlePicker (DayPickerInput.Select date) next) = do
       H.modify $ _{ selectedDate = Single date }
       pure next

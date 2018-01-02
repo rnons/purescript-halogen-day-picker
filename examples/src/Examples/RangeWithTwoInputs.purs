@@ -11,9 +11,10 @@ import Halogen.HTML.Events as HE
 
 import Halogen.DayPicker (SelectedDate(FromTo), DisabledDate(..))
 import Halogen.DayPicker as DayPicker
-import Halogen.DayPickerInput (Effects)
 import Halogen.DayPickerInput as DayPickerInput
+
 import Examples.Utils (class_)
+import Examples.Types (AppM)
 
 data Query a
   = HandlePickerFrom DayPickerInput.Message a
@@ -29,7 +30,7 @@ derive instance eqSlot :: Eq Slot
 derive instance ordSlot :: Ord Slot
 
 
-component :: forall m. Date -> H.Component HH.HTML Query Unit Void (Effects m)
+component :: Date -> H.Component HH.HTML Query Unit Void AppM
 component today =
   H.parentComponent
     { initialState: const initialState
@@ -45,7 +46,7 @@ component today =
     , toDate: Nothing
     }
 
-  render :: State -> H.ParentHTML Query DayPickerInput.Query Slot (Effects m)
+  render :: State -> H.ParentHTML Query DayPickerInput.Query Slot AppM
   render { fromDate, toDate } =
     HH.div
       [ class_ "example-range" ]
@@ -93,7 +94,7 @@ component today =
         , value = toDate
         }
 
-  eval :: Query ~> H.ParentDSL State Query DayPickerInput.Query Slot Void (Effects m)
+  eval :: Query ~> H.ParentDSL State Query DayPickerInput.Query Slot Void AppM
   eval (HandlePickerFrom (DayPickerInput.Select date) next) = do
       H.modify $ _{ fromDate = Just date }
       _ <- H.query SlotTo $ H.action DayPickerInput.Focus
