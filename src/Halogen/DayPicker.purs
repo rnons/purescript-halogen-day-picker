@@ -22,6 +22,12 @@ import Halogen.DayPicker.Styles (Styles, defaultStyles)
 weekdays :: Array Weekday
 weekdays = [ Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday ]
 
+defaultFormatMonth :: Date -> String
+defaultFormatMonth date = monthStr <> " " <> yearStr
+  where
+  yearStr = show $ fromEnum $ Date.year date
+  monthStr = show $ Date.month date
+
 defaultFormatWeekday :: Weekday -> String
 defaultFormatWeekday Monday = "M"
 defaultFormatWeekday Tuesday = "T"
@@ -52,6 +58,7 @@ type Props =
   , disabledDate :: DisabledDate
   , numberOfMonths :: Int
   , styles :: Styles
+  , formatMonth :: Date -> String
   , formatWeekday :: Weekday -> String
   }
 
@@ -62,6 +69,7 @@ defaultProps today =
   , disabledDate: NoneDisabled
   , numberOfMonths: 1
   , styles: defaultStyles
+  , formatMonth: defaultFormatMonth
   , formatWeekday: defaultFormatWeekday
   }
 
@@ -72,26 +80,32 @@ type State =
   , disabledDate :: DisabledDate
   , numberOfMonths :: Int
   , styles :: Styles
+  , formatMonth :: Date -> String
+  , formatWeekday :: Weekday -> String
   }
 
 initialState :: Props -> State
-initialState { today, selectedDate, disabledDate, numberOfMonths, styles } =
+initialState { today, selectedDate, disabledDate, numberOfMonths, styles, formatMonth, formatWeekday } =
   { today
   , firstDateOfFirstMonth: getFirstDateOfFirstMonth selectedDate today
   , selectedDate
   , disabledDate
   , numberOfMonths
   , styles
+  , formatMonth
+  , formatWeekday
   }
 
 updateStateWithProps :: Props -> State -> State
-updateStateWithProps { today, selectedDate, disabledDate, numberOfMonths, styles } =
+updateStateWithProps { today, selectedDate, disabledDate, numberOfMonths, styles, formatMonth, formatWeekday } =
   _{ today = today
    , selectedDate = selectedDate
    , disabledDate = disabledDate
    , numberOfMonths = numberOfMonths
    , firstDateOfFirstMonth = getFirstDateOfFirstMonth selectedDate today
    , styles = styles
+   , formatMonth = formatMonth
+   , formatWeekday = formatWeekday
    }
 
 data Query a
@@ -162,14 +176,14 @@ getFirstDateOfFirstMonth (Single date) _ = firstDateOfMonth date
 getFirstDateOfFirstMonth (FromTo (Just date) _) _ = firstDateOfMonth date
 getFirstDateOfFirstMonth _ today = firstDateOfMonth today
 
-renderTableHeader :: Styles -> H.ComponentHTML Query
-renderTableHeader styles =
+renderTableHeader :: State -> Styles -> H.ComponentHTML Query
+renderTableHeader { formatWeekday } styles =
   HH.thead_
     [ HH.tr_ (map render' weekdays)
     ]
   where
     render' day =
-      HH.td [ HP.class_ styles.weekday ] [ HH.text $ defaultFormatWeekday day ]
+      HH.td [ HP.class_ styles.weekday ] [ HH.text $ formatWeekday day ]
 
 renderDay :: State -> Date -> Maybe Day -> H.ComponentHTML Query
 renderDay _ _ Nothing = HH.td_ [ HH.text "" ]
@@ -220,7 +234,7 @@ renderTableBody state firstDate =
     lastRowIndex = (firstDayColIndex + fromEnum lastDay - 1) / 7
 
 renderMonth :: State -> Int -> H.ComponentHTML Query
-renderMonth state@{ styles } index =
+renderMonth state@{ styles, formatMonth } index =
   HH.div
     [ HP.class_ styles.month ]
     [ HH.div
@@ -245,15 +259,13 @@ renderMonth state@{ styles } index =
         ]
     , HH.table
         [ HP.class_ styles.body ]
-        [ renderTableHeader styles
+        [ renderTableHeader state styles
         , renderTableBody state firstDate
         ]
     ]
   where
     firstDate = applyN index firstDateOfNextMonth state.firstDateOfFirstMonth
-    yearStr = show $ fromEnum $ Date.year firstDate
-    monthStr = show $ fromEnum $ Date.month firstDate
-    headText = yearStr <> "年" <> monthStr <> "月"
+    headText = formatMonth firstDate
     showPrev = index == 0
     showNext = index + 1 == state.numberOfMonths
 
