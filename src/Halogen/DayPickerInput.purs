@@ -6,10 +6,13 @@ import Control.Monad.Aff (Aff, delay, forkAff, liftEff')
 import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Eff.Console (CONSOLE)
 
-import Data.Enum (class BoundedEnum, fromEnum)
+import Data.Enum (class BoundedEnum, fromEnum, toEnum)
 import Data.Date (Date)
 import Data.Date as Date
-import Data.Maybe (Maybe(..))
+import Data.Int as Int
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.String (Pattern(Pattern), split)
+import Data.Traversable (sequence)
 import Data.Time.Duration (Milliseconds(..))
 
 import DOM (DOM)
@@ -39,35 +42,6 @@ type Effects m
         , avar :: AVAR
         , console :: CONSOLE | m)
 
-type Props =
-  { dayPickerProps :: DayPicker.Props
-  , value :: Maybe Date
-  , placeholder :: String
-  , styles :: Styles
-  , formatDate :: Date -> String
-  }
-
-type State =
-  { dayPickerProps :: DayPicker.Props
-  , focused :: Boolean
-  , value :: Maybe Date
-  , placeholder :: String
-  , styles :: Styles
-  , formatDate :: Date -> String
-  }
-
-data Query a
-  = Init a
-  | ClickDocument Event a
-  | Focus a
-  | OnFocus a
-  | OnReceiveProps Props a
-  | HandleDayPicker DayPicker.Message a
-
-type Message = Date
-
-type Slot = Unit
-
 defaultFormatDate :: Date -> String
 defaultFormatDate date =
   year <> "-" <> month <> "-" <> day
@@ -77,6 +51,24 @@ defaultFormatDate date =
   year = cs $ Date.year date
   month = cs $ Date.month date
   day = cs $ Date.day date
+
+defaultParseDate :: String -> Maybe Date
+defaultParseDate str =
+  case mParts of
+    Just [y, m, d] ->
+      fromMaybe Nothing (Date.exactDate <$> (toEnum y) <*> (toEnum m) <*> (toEnum d))
+    _ -> Nothing
+  where
+  mParts = sequence $ Int.fromString <$> split (Pattern "-") str
+
+type Props =
+  { dayPickerProps :: DayPicker.Props
+  , value :: Maybe Date
+  , placeholder :: String
+  , styles :: Styles
+  , formatDate :: Date -> String
+  , parseDate :: String -> Maybe Date
+  }
 
 defaultPropsFromDate :: Date -> Props
 defaultPropsFromDate today =
@@ -91,16 +83,51 @@ defaultProps dayPickerProps =
   , placeholder: "YYYY-M-D"
   , styles: defaultStyles
   , formatDate: defaultFormatDate
+  , parseDate: defaultParseDate
+  }
+
+type State =
+  { dayPickerProps :: DayPicker.Props
+  , focused :: Boolean
+  , value :: Maybe Date
+  , placeholder :: String
+  , styles :: Styles
+  , formatDate :: Date -> String
+  , parseDate :: String -> Maybe Date
+  }
+
+initialState :: Props -> State
+initialState { dayPickerProps, value, placeholder, styles, formatDate, parseDate } =
+  { dayPickerProps
+  , focused: false
+  , value
+  , placeholder
+  , styles
+  , formatDate
+  , parseDate
   }
 
 updateStateWithProps :: Props -> State -> State
-updateStateWithProps { dayPickerProps, value, placeholder, styles, formatDate } =
+updateStateWithProps { dayPickerProps, value, placeholder, styles, formatDate, parseDate } =
   _{ dayPickerProps = dayPickerProps
    , value = value
    , placeholder = placeholder
    , styles = styles
    , formatDate = formatDate
+   , parseDate = parseDate
    }
+
+data Query a
+  = Init a
+  | ClickDocument Event a
+  | Focus a
+  | OnFocus a
+  | OnReceiveProps Props a
+  | HandleDayPicker DayPicker.Message a
+
+type Message = Date
+
+type Slot = Unit
 
 rootRef :: H.RefLabel
 rootRef = H.RefLabel "root"
@@ -118,16 +145,6 @@ dayPickerInput = H.lifecycleParentComponent
   , finalizer: Nothing
   }
   where
-
-  initialState :: Props -> State
-  initialState { dayPickerProps, value, placeholder, styles, formatDate } =
-    { dayPickerProps: dayPickerProps
-    , focused: false
-    , value: value
-    , placeholder: placeholder
-    , styles: styles
-    , formatDate: formatDate
-    }
 
   render :: State -> H.ParentHTML Query DayPicker.Query Unit (Effects m)
   render state@{ styles } =
