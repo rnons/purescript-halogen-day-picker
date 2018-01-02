@@ -1,4 +1,11 @@
-module Halogen.DayPickerInput where
+module Halogen.DayPickerInput
+  ( Props
+  , Query(..)
+  , Message(..)
+  , defaultProps
+  , dayPickerInput
+  , module Halogen.DayPickerInput.Styles
+  ) where
 
 import Prelude
 

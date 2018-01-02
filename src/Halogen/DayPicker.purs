@@ -1,4 +1,13 @@
-module Halogen.DayPicker where
+module Halogen.DayPicker
+  ( SelectedDate(..)
+  , DisabledDate(..)
+  , Props
+  , Query(..)
+  , Message
+  , defaultProps
+  , dayPicker
+  , module Halogen.DayPicker.Styles
+  ) where
 
 import Prelude
 
