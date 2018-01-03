@@ -1,3 +1,6 @@
+-- | A calendar component that can be customized by `Props`. It is a controlled
+-- | component, which means it has minimum internal state and is controlled by
+-- | parent component.
 module Halogen.DayPicker
   ( SelectedDate(..)
   , DisabledDate(..)
@@ -35,8 +38,8 @@ weekdays = [ Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday ]
 defaultFormatMonth :: Date -> String
 defaultFormatMonth date = monthStr <> " " <> yearStr
   where
-  yearStr = show $ fromEnum $ Date.year date
-  monthStr = show $ Date.month date
+    yearStr = show $ fromEnum $ Date.year date
+    monthStr = show $ Date.month date
 
 defaultFormatWeekday :: Weekday -> String
 defaultFormatWeekday Monday = "M"
@@ -47,6 +50,7 @@ defaultFormatWeekday Friday = "F"
 defaultFormatWeekday Saturday = "S"
 defaultFormatWeekday Sunday = "S"
 
+-- | `SelectedDate` can be a single `Date` or a range of `Date`s.
 -- TODO: support `Set Date`
 data SelectedDate
   = NoneSelected
@@ -56,6 +60,8 @@ data SelectedDate
 derive instance genericRepSelectedDate :: Generic SelectedDate _
 instance showSelectedDate :: Show SelectedDate where show = genericShow
 
+-- | Disable dates `Before` or `After` a specific `Date`, can also be a
+-- | combination of them.
 -- TODO: support `Set Date` and `Date -> Boolean`
 data DisabledDate
   = NoneDisabled
@@ -63,6 +69,8 @@ data DisabledDate
   | After Date
   | DisabledArray (Array DisabledDate)
 
+-- | Month title, weekday text, class name can be customized. Note that `today`
+-- | is not an internal state, but passed in.
 type Props =
   { today :: Date
   , selectedDate :: SelectedDate
@@ -73,6 +81,7 @@ type Props =
   , formatWeekday :: Weekday -> String
   }
 
+-- | Construct default props from `today` date.
 defaultProps :: Date -> Props
 defaultProps today =
   { today: today
@@ -84,6 +93,8 @@ defaultProps today =
   , formatWeekday: defaultFormatWeekday
   }
 
+-- | The only interal state is `firstDateOfFirstMonth`, which is the first date
+-- | of currently rendered months. Other states are all passed in.
 type State =
   { today :: Date
   , firstDateOfFirstMonth :: Date
@@ -119,12 +130,14 @@ updateStateWithProps { today, selectedDate, disabledDate, numberOfMonths, styles
    , formatWeekday = formatWeekday
    }
 
+-- | The behavior of this component includes selecting date and navigating months.
 data Query a
   = OnReceiveProps Props a
   | Click Date a
   | PrevMonth a
   | NextMonth a
 
+-- | This component raises selected `Date` to be handled by parent component.
 type Message = Date
 
 applyN :: forall a. Int -> (a -> a) -> a -> a
@@ -288,28 +301,26 @@ render state@{ styles } =
     [ HP.class_ styles.root ]
     $ mapWithIndex (\index _ -> renderMonth state index) (1..state.numberOfMonths)
 
-dayPicker :: forall m. H.Component HH.HTML Query Props Message m
-dayPicker =
-  H.component
-    { initialState: initialState
-    , render
-    , eval
-    , receiver: HE.input OnReceiveProps
-    }
-  where
+eval :: forall m. Query ~> H.ComponentDSL State Query Message m
+eval (OnReceiveProps input next) = do
+  H.modify $ updateStateWithProps input
+  pure next
+eval (Click date next) = do
+  H.raise date
+  pure next
+eval (PrevMonth next) = do
+  H.modify $ \state ->
+    state { firstDateOfFirstMonth = firstDateOfPrevMonth state.firstDateOfFirstMonth }
+  pure next
+eval (NextMonth next) = do
+  H.modify $ \state ->
+    state { firstDateOfFirstMonth = firstDateOfNextMonth state.firstDateOfFirstMonth }
+  pure next
 
-  eval :: Query ~> H.ComponentDSL State Query Message m
-  eval (OnReceiveProps input next) = do
-    H.modify $ updateStateWithProps input
-    pure next
-  eval (Click date next) = do
-    H.raise date
-    pure next
-  eval (PrevMonth next) = do
-    H.modify $ \state ->
-      state { firstDateOfFirstMonth = firstDateOfPrevMonth state.firstDateOfFirstMonth }
-    pure next
-  eval (NextMonth next) = do
-    H.modify $ \state ->
-      state { firstDateOfFirstMonth = firstDateOfNextMonth state.firstDateOfFirstMonth }
-    pure next
+dayPicker :: forall m. H.Component HH.HTML Query Props Message m
+dayPicker = H.component
+  { initialState
+  , render
+  , eval
+  , receiver: HE.input OnReceiveProps
+  }
