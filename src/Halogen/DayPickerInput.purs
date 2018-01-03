@@ -177,7 +177,7 @@ dayPickerInput
   .  MonadAff (HalogenEffects eff) m
   => H.Component HH.HTML Query Props Message m
 dayPickerInput = H.lifecycleParentComponent
-  { initialState: initialState
+  { initialState
   , render
   , eval
   , receiver: HE.input OnReceiveProps

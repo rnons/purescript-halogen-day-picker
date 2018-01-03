@@ -301,22 +301,7 @@ render state@{ styles } =
     [ HP.class_ styles.root ]
     $ mapWithIndex (\index _ -> renderMonth state index) (1..state.numberOfMonths)
 
-eval :: forall m. Query ~> H.ComponentDSL State Query Message m
-eval (OnReceiveProps input next) = do
-  H.modify $ updateStateWithProps input
-  pure next
-eval (Click date next) = do
-  H.raise date
-  pure next
-eval (PrevMonth next) = do
-  H.modify $ \state ->
-    state { firstDateOfFirstMonth = firstDateOfPrevMonth state.firstDateOfFirstMonth }
-  pure next
-eval (NextMonth next) = do
-  H.modify $ \state ->
-    state { firstDateOfFirstMonth = firstDateOfNextMonth state.firstDateOfFirstMonth }
-  pure next
-
+-- | A simple calendar that raises selected date.
 dayPicker :: forall m. H.Component HH.HTML Query Props Message m
 dayPicker = H.component
   { initialState
@@ -324,3 +309,20 @@ dayPicker = H.component
   , eval
   , receiver: HE.input OnReceiveProps
   }
+  where
+
+  eval :: Query ~> H.ComponentDSL State Query Message m
+  eval (OnReceiveProps input next) = do
+    H.modify $ updateStateWithProps input
+    pure next
+  eval (Click date next) = do
+    H.raise date
+    pure next
+  eval (PrevMonth next) = do
+    H.modify $ \state ->
+      state { firstDateOfFirstMonth = firstDateOfPrevMonth state.firstDateOfFirstMonth }
+    pure next
+  eval (NextMonth next) = do
+    H.modify $ \state ->
+      state { firstDateOfFirstMonth = firstDateOfNextMonth state.firstDateOfFirstMonth }
+    pure next
