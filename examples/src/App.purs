@@ -42,7 +42,17 @@ renderMain SimpleInput today =
 renderMain RangeWithTwoInputs today =
   HH.slot' CP.cp3 unit (ExpRangeInputs.component today) unit absurd
 renderMain _ today =
-  HH.text "main body"
+  HH.article_
+    [ HH.p_
+        [
+          HH.a
+            [ HP.href "https://github.com/rnons/purescript-halogen-day-picker" ]
+            [ HH.text "purescript-halogen-day-picker" ]
+        , HH.text " provides DayPicker and DayPickerInput component."
+        ]
+    , HH.p_
+        [ HH.text "Click left sidebar to view examples." ]
+    ]
 
 app :: Date -> H.Component HH.HTML Query Unit Void AppM
 app today =

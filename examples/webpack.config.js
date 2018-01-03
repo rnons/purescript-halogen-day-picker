@@ -4,7 +4,7 @@ module.exports = {
   context: __dirname,
   entry: "./src/main.js",
   output: {
-    path: __dirname + "/dist",
+    path: __dirname + "/../docs",
     filename: "main.js"
   },
   resolve: {

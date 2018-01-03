@@ -1,6 +1,6 @@
 {
   "name": "examples",
-  "description": "purescript-day-picker examples",
+  "description": "purescript-halogen-day-picker examples",
   "license": "BSD-3-Clause",
   "private": true,
   "ignore": [
@@ -9,6 +9,7 @@
     "bower_components"
   ],
   "dependencies": {
+    "purescript-halogen-day-picker": "*",
     "purescript-now": "^3.0.0",
     "purescript-routing": "^6.1.2"
   },
