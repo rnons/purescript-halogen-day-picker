@@ -10,7 +10,8 @@
     "node_modules",
     "bower_components",
     "output",
-    "examples"
+    "examples",
+    "docs"
   ],
   "dependencies": {
     "purescript-halogen": "^3.0.1",
