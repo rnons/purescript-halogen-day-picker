@@ -1,3 +1,5 @@
+-- | A component containing a text input and a dayPicker. The dayPicker is
+-- | wrapped in a dropdown.
 module Halogen.DayPickerInput
   ( Props
   , Query(..)
@@ -47,11 +49,11 @@ defaultFormatDate :: Date -> String
 defaultFormatDate date =
   year <> "-" <> month <> "-" <> day
   where
-  cs :: forall a. BoundedEnum a => a -> String
-  cs = show <<< fromEnum
-  year = cs $ Date.year date
-  month = cs $ Date.month date
-  day = cs $ Date.day date
+    cs :: forall a. BoundedEnum a => a -> String
+    cs = show <<< fromEnum
+    year = cs $ Date.year date
+    month = cs $ Date.month date
+    day = cs $ Date.day date
 
 defaultParseDate :: String -> Maybe Date
 defaultParseDate str =
@@ -60,8 +62,9 @@ defaultParseDate str =
       fromMaybe Nothing (Date.exactDate <$> (toEnum y) <*> (toEnum m) <*> (toEnum d))
     _ -> Nothing
   where
-  mParts = sequence $ Int.fromString <$> split (Pattern "-") str
+    mParts = sequence $ Int.fromString <$> split (Pattern "-") str
 
+-- | What to show in the input and how to parse input value can be customized.
 type Props =
   { dayPickerProps :: DayPicker.Props
   , value :: Maybe Date
@@ -75,8 +78,9 @@ defaultPropsFromDate :: Date -> Props
 defaultPropsFromDate today =
   defaultProps dayPickerProps
   where
-  dayPickerProps = DayPicker.defaultProps today
+    dayPickerProps = DayPicker.defaultProps today
 
+-- | Default date format is `YYYY-M-D`.
 defaultProps :: DayPicker.Props -> Props
 defaultProps dayPickerProps =
   { dayPickerProps: dayPickerProps
@@ -118,15 +122,17 @@ updateStateWithProps { dayPickerProps, value, placeholder, styles, formatDate, p
    , parseDate = parseDate
    }
 
+-- Handle focus and `onValueInput`.
 data Query a
   = Init a
   | ClickDocument Event a
+  | OnReceiveProps Props a
+  | HandleDayPicker DayPicker.Message a
   | Focus a
   | OnFocus a
   | OnInput String a
-  | OnReceiveProps Props a
-  | HandleDayPicker DayPicker.Message a
 
+-- It wraps `DayPicker.Message` as `Select Date`. Input value change is first parsed as `Maybe Date`, then sent to parent component.
 data Message
   = Select Date
   | Input (Maybe Date)
@@ -139,9 +145,36 @@ rootRef = H.RefLabel "root"
 inputRef :: H.RefLabel
 inputRef = H.RefLabel "input"
 
+render
+  :: forall eff m
+  .  MonadAff (HalogenEffects eff) m
+  => State -> H.ParentHTML Query DayPicker.Query Unit m
+render state@{ styles, value } =
+  HH.div
+    [ HP.class_ styles.root
+    , HP.ref rootRef
+    ]
+    [ HH.input
+        [ HP.type_ InputText
+        , HP.class_ styles.input
+        , HP.value value
+        , HP.placeholder state.placeholder
+        , HP.ref inputRef
+        , HE.onFocus $ HE.input_ OnFocus
+        , HE.onValueInput $ HE.input OnInput
+        ]
+    , if state.focused
+      then HH.div [ HP.class_ styles.dropdown ] [ dayPicker ]
+      else HH.text ""
+    ]
+  where
+    dayPicker =
+      HH.slot unit DayPicker.dayPicker state.dayPickerProps (HE.input HandleDayPicker)
+
+-- | A components that includes a text input and `DayPicker.dayPicker`.
 dayPickerInput
   :: forall eff m
-  . MonadAff (HalogenEffects eff) m
+  .  MonadAff (HalogenEffects eff) m
   => H.Component HH.HTML Query Props Message m
 dayPickerInput = H.lifecycleParentComponent
   { initialState: initialState
@@ -152,29 +185,6 @@ dayPickerInput = H.lifecycleParentComponent
   , finalizer: Nothing
   }
   where
-
-  render :: State -> H.ParentHTML Query DayPicker.Query Unit m
-  render state@{ styles, value } =
-    HH.div
-      [ HP.class_ styles.root
-      , HP.ref rootRef
-      ]
-      [ HH.input
-          [ HP.type_ InputText
-          , HP.class_ styles.input
-          , HP.value value
-          , HP.placeholder state.placeholder
-          , HP.ref inputRef
-          , HE.onFocus $ HE.input_ OnFocus
-          , HE.onValueInput $ HE.input OnInput
-          ]
-      , if state.focused
-        then HH.div [ HP.class_ styles.dropdown ] [ dayPicker ]
-        else HH.text ""
-      ]
-    where
-    dayPicker =
-      HH.slot unit DayPicker.dayPicker state.dayPickerProps (HE.input HandleDayPicker)
 
   eval :: Query ~> H.ParentDSL State Query DayPicker.Query Slot Message m
   eval (Init next) = do
