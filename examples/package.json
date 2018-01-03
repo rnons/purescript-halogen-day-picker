@@ -1,6 +1,7 @@
 {
   "scripts": {
     "build": "webpack -p --progress",
+    "postinstall": "bower install",
     "start": "webpack-dev-server --progress"
   },
   "devDependencies": {

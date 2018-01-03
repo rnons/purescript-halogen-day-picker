@@ -51,7 +51,7 @@ component today =
     HH.div
       [ class_ "example-range" ]
       [ HH.h1_
-          [ HH.text "Simple day picker input" ]
+          [ HH.text "Select a range of dates with two inputs" ]
       , HH.p_
           [ HH.text "Click input to show a calendar" ]
       , HH.div
