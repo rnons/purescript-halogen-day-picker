@@ -2,8 +2,8 @@ module Examples.RangeWithTwoInputs where
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
 import Data.Date (Date)
+import Data.Maybe (Maybe(..))
 
 import Halogen as H
 import Halogen.HTML as HH
@@ -72,11 +72,13 @@ component today =
     dayPickerProps = (DayPicker.defaultProps today)
       { selectedDate = FromTo fromDate toDate
       , numberOfMonths = 2
+      , disabledDate = Before today
       }
     pickerFromProps =
       case toDate of
         Just to ->
-          dayPickerProps { disabledDate = After to }
+          dayPickerProps
+            { disabledDate = DayPicker.DisabledArray [Before today, After to] }
         _ -> dayPickerProps
     pickerToProps =
       case fromDate of

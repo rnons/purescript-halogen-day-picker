@@ -16,6 +16,7 @@ import Data.Date (Date, Weekday(..), Day)
 import Data.Date as Date
 import Data.DateTime as DateTime
 import Data.Enum (fromEnum, toEnum)
+import Data.Foldable (any)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
@@ -52,14 +53,15 @@ data SelectedDate
   | Single Date
   | FromTo (Maybe Date) (Maybe Date)
 
+derive instance genericRepSelectedDate :: Generic SelectedDate _
+instance showSelectedDate :: Show SelectedDate where show = genericShow
+
 -- TODO: support `Set Date` and `Date -> Boolean`
 data DisabledDate
   = NoneDisabled
   | Before Date
   | After Date
-
-derive instance genericRepSelectedDate :: Generic SelectedDate _
-instance showSelectedDate :: Show SelectedDate where show = genericShow
+  | DisabledArray (Array DisabledDate)
 
 type Props =
   { today :: Date
@@ -148,6 +150,7 @@ isDateDisabled :: DisabledDate -> Date -> Boolean
 isDateDisabled NoneDisabled _ = false
 isDateDisabled (Before d) date = date < d
 isDateDisabled (After d) date = date > d
+isDateDisabled (DisabledArray rules) date = any (flip isDateDisabled $ date) rules
 
 firstDateOfMonth :: Date -> Date
 firstDateOfMonth date =
