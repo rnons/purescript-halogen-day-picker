@@ -4,6 +4,10 @@
   "authors": [
     "Ping Chen <remotenonsense@gmail.com>"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/rnons/purescript-halogen-day-picker.git"
+  },
   "license": "BSD-3-Clause",
   "ignore": [
     "**/.*",
