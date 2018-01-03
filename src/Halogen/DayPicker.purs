@@ -196,7 +196,7 @@ renderTableHeader { formatWeekday } styles =
 
 renderDay :: State -> Date -> Maybe Day -> H.ComponentHTML Query
 renderDay _ _ Nothing = HH.td_ [ HH.text "" ]
-renderDay state@{ styles, selectedDate } firstDate (Just day) =
+renderDay state@{ styles, selectedDate, today } firstDate (Just day) =
   HH.td
     props
     [ HH.text $ show $ fromEnum day
@@ -205,6 +205,7 @@ renderDay state@{ styles, selectedDate } firstDate (Just day) =
     year = Date.year firstDate
     month = Date.month firstDate
     date = Date.canonicalDate year month day
+    todayCls = if today == date then [ styles.dayToday ] else []
     isDisabled = isDateDisabled state.disabledDate date
     disabled =
       if isDisabled then [ styles.dayIsDisabled ] else []
@@ -215,7 +216,7 @@ renderDay state@{ styles, selectedDate } firstDate (Just day) =
     to =
       if isDateTo state.selectedDate date then [ styles.dayTo ] else []
     className =
-      [ styles.day ] <> from <> to <> disabled <> selected
+      [ styles.day ] <> todayCls <> from <> to <> selected <> disabled
     props =
       if isDisabled
       then [ HP.classes className ]

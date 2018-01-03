@@ -80,6 +80,10 @@
   color: white;
 }
 
+.DayPicker-day--today {
+  font-weight: bold;
+}
+
 .DayPicker-day--from {
   border-radius: 50% 0 0 50%;
 }

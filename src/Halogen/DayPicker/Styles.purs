@@ -16,6 +16,7 @@ type Styles =
   , body :: ClassName
   , weekday :: ClassName
   , day :: ClassName
+  , dayToday :: ClassName
   , dayFrom :: ClassName
   , dayTo :: ClassName
   , dayIsSelected :: ClassName
@@ -34,6 +35,7 @@ defaultStyles =
   , body: ClassName "DayPicker-body"
   , weekday: ClassName "DayPicker-weekday"
   , day: ClassName "DayPicker-day"
+  , dayToday: ClassName "DayPicker-day--today"
   , dayFrom: ClassName "DayPicker-day--from"
   , dayTo: ClassName "DayPicker-day--to"
   , dayIsSelected: ClassName "is-selected"
