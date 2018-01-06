@@ -29,6 +29,7 @@ import DOM.HTML (window)
 import DOM.HTML.Event.EventTypes as Etp
 import DOM.HTML.Types (htmlDocumentToEventTarget, htmlElementToNode)
 import DOM.HTML.HTMLElement (focus)
+import DOM.HTML.Indexed (HTMLinput)
 import DOM.HTML.Indexed.InputType (InputType(InputText))
 import DOM.HTML.Window (document)
 import DOM.Node.Node (contains, isEqualNode)
@@ -67,6 +68,7 @@ defaultParseDate str =
 -- | What to show in the input and how to parse input value can be customized.
 type Props =
   { dayPickerProps :: DayPicker.Props
+  , inputProps :: Array (HH.IProp HTMLinput (Query Unit))
   , value :: Maybe Date
   , placeholder :: String
   , styles :: Styles
@@ -84,6 +86,7 @@ defaultPropsFromDate today =
 defaultProps :: DayPicker.Props -> Props
 defaultProps dayPickerProps =
   { dayPickerProps: dayPickerProps
+  , inputProps: []
   , value: Nothing
   , placeholder: "YYYY-M-D"
   , styles: defaultStyles
@@ -93,6 +96,7 @@ defaultProps dayPickerProps =
 
 type State =
   { dayPickerProps :: DayPicker.Props
+  , inputProps :: Array (HH.IProp HTMLinput (Query Unit))
   , focused :: Boolean
   , value :: String
   , placeholder :: String
@@ -102,8 +106,9 @@ type State =
   }
 
 initialState :: Props -> State
-initialState { dayPickerProps, value, placeholder, styles, formatDate, parseDate } =
+initialState { dayPickerProps, inputProps, value, placeholder, styles, formatDate, parseDate } =
   { dayPickerProps
+  , inputProps
   , focused: false
   , value: maybe "" formatDate value
   , placeholder
@@ -113,14 +118,15 @@ initialState { dayPickerProps, value, placeholder, styles, formatDate, parseDate
   }
 
 updateStateWithProps :: Props -> State -> State
-updateStateWithProps { dayPickerProps, value, placeholder, styles, formatDate, parseDate } state =
-  state { dayPickerProps = dayPickerProps
-   , value = maybe state.value formatDate value
-   , placeholder = placeholder
-   , styles = styles
-   , formatDate = formatDate
-   , parseDate = parseDate
-   }
+updateStateWithProps { dayPickerProps, inputProps, value, placeholder, styles, formatDate, parseDate } state = state
+  { dayPickerProps = dayPickerProps
+  , inputProps = inputProps
+  , value = maybe state.value formatDate value
+  , placeholder = placeholder
+  , styles = styles
+  , formatDate = formatDate
+  , parseDate = parseDate
+  }
 
 -- Handle focus and `onValueInput`.
 data Query a
@@ -149,12 +155,12 @@ render
   :: forall eff m
   .  MonadAff (HalogenEffects eff) m
   => State -> H.ParentHTML Query DayPicker.Query Unit m
-render state@{ styles, value } =
+render state@{ styles, inputProps, value } =
   HH.div
     [ HP.class_ styles.root
     , HP.ref rootRef
     ]
-    [ HH.input
+    [ HH.input $ inputProps <>
         [ HP.type_ InputText
         , HP.class_ styles.input
         , HP.value value
