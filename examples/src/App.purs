@@ -13,8 +13,6 @@ import Halogen.Component.ChildPath as CP
 import Halogen.HTML as HH
 import Halogen.HTML.Properties as HP
 
-import Halogen.DayPicker as DayPicker
-
 import Route (Route(..))
 import Examples.Types (AppM)
 import Examples.Simple as ExpSimple
@@ -22,8 +20,7 @@ import Examples.SimpleInput as ExpSimpleInput
 import Examples.RangeWithTwoInputs as ExpRangeInputs
 
 data Query a
-  = DayPickerChange DayPicker.Message a
-  | RouteChange Route a
+  = RouteChange Route a
 
 type State =
   { selectedDate :: Maybe Date
@@ -93,10 +90,6 @@ app today =
       ]
 
   eval :: Query ~> H.ParentDSL State Query ChildQuery Slot Void AppM
-  eval = case _ of
-    DayPickerChange date next -> do
-      H.modify (\state -> state { selectedDate = Just date })
-      pure next
-    RouteChange route next -> do
-      H.modify (\state -> state { route = route })
-      pure next
+  eval (RouteChange route next) = do
+    H.modify (\state -> state { route = route })
+    pure next
