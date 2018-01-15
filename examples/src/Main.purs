@@ -10,13 +10,12 @@ import Control.Monad.Eff.Now (NOW, nowDate)
 
 import Data.DateTime.Locale (LocalValue(..))
 
-import Routing (matches)
+import Routing (hashes)
 
 import Halogen as H
 import Halogen.Aff as HA
 import Halogen.VDom.Driver (runUI)
 
-import Route (routing)
 import App (app, Query(RouteChange))
 
 main :: Eff (HA.HalogenEffects (console :: CONSOLE, now :: NOW)) Unit
@@ -25,5 +24,5 @@ main = do
   HA.runHalogenAff do
     body <- HA.awaitBody
     app' <- runUI (app date) unit body
-    liftEff $ matches routing $ \_ next ->
+    liftEff $ hashes $ \_ next ->
       launchAff_ $ app'.query (H.action $ RouteChange next)

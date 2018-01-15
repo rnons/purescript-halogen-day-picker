@@ -6,87 +6,96 @@ import Data.Maybe (Maybe(..))
 import Data.Date (Date)
 
 import Data.Const (Const)
+import Data.Functor (mapFlipped)
+import Data.StrMap as SM
+import Data.Tuple (Tuple(Tuple))
 
 import Halogen as H
 import Halogen.Component.Proxy (ProxyQ, proxy)
 import Halogen.HTML as HH
 import Halogen.HTML.Properties as HP
 
-import Route (Route(..))
+import Global (decodeURI, encodeURI)
+
 import Examples.Types (AppM)
 import Examples.Simple as ExpSimple
 import Examples.SimpleInput as ExpSimpleInput
 import Examples.RangeWithTwoInputs as ExpRangeInputs
 
 data Query a
-  = RouteChange Route a
+  = RouteChange String a
 
 type State =
   { selectedDate :: Maybe Date
-  , route :: Route
+  , route :: String
   }
 
 type ChildQuery = ProxyQ (Const Void) Unit Void
 
-type Slot = Int
+type Slot = String
 
-renderMain :: Route -> Date -> H.ParentHTML Query ChildQuery Slot AppM
-renderMain Simple today =
-  HH.slot 1 (proxy $ ExpSimple.component today) unit absurd
-renderMain SimpleInput today =
-  HH.slot 2 (proxy $ ExpSimpleInput.component today) unit absurd
-renderMain RangeWithTwoInputs today =
-  HH.slot 3 (proxy $ ExpRangeInputs.component today) unit absurd
-renderMain _ today =
-  HH.article_
-    [ HH.p_
-        [
-          HH.a
-            [ HP.href "https://github.com/rnons/purescript-halogen-day-picker" ]
-            [ HH.text "purescript-halogen-day-picker" ]
-        , HH.text " provides DayPicker and DayPickerInput component."
+type StoryMap q i o m = SM.StrMap (H.Component HH.HTML q i o m)
+
+stories :: Date -> StoryMap ChildQuery Unit Void AppM
+stories today = SM.fromFoldable
+  [ Tuple "Simple day picker" $ proxy $ ExpSimple.component today
+  , Tuple "Simple day picker input" $ proxy $ ExpSimpleInput.component today
+  , Tuple "Range with two inputs" $ proxy $ ExpRangeInputs.component today
+  ]
+
+renderSidebar :: Date -> H.ParentHTML Query ChildQuery Slot AppM
+renderSidebar today =
+  HH.ul_ $
+    mapFlipped (SM.keys $ stories today) $ \name ->
+      HH.li_
+      [ HH.a
+        [ HP.href $ "#" <> encodeURI name ]
+        [ HH.text name ]
+      ]
+
+renderMain :: String -> Date -> H.ParentHTML Query ChildQuery Slot AppM
+renderMain route today =
+  case SM.lookup decoded (stories today) of
+    Just cmp -> HH.slot decoded cmp unit absurd
+    _ ->
+      HH.article_
+        [ HH.p_
+            [
+              HH.a
+                [ HP.href "https://github.com/rnons/purescript-halogen-day-picker" ]
+                [ HH.text "purescript-halogen-day-picker" ]
+            , HH.text " provides DayPicker and DayPickerInput component."
+            ]
+        , HH.p_
+            [ HH.text "Click left sidebar to view examples." ]
         ]
-    , HH.p_
-        [ HH.text "Click left sidebar to view examples." ]
+  where
+    decoded = decodeURI route
+
+render :: Date -> State -> H.ParentHTML Query ChildQuery Slot AppM
+render today state =
+  HH.div [ HP.class_ $ HH.ClassName "container" ]
+    [ HH.div [ HP.class_ $ HH.ClassName "sidebar" ]
+        [ HH.a [ HP.href "" ]
+            [ HH.text "Home" ]
+        , renderSidebar today
+        ]
+    , HH.div [ HP.class_ $ HH.ClassName "main" ]
+        [ renderMain state.route today ]
     ]
 
 app :: Date -> H.Component HH.HTML Query Unit Void AppM
 app today =
   H.parentComponent
     { initialState: const initialState
-    , render
+    , render: render today
     , eval
     , receiver: const Nothing
     }
   where
 
   initialState :: State
-  initialState = { selectedDate: Nothing, route: Home }
-
-  render :: State -> H.ParentHTML Query ChildQuery Slot AppM
-  render state =
-    HH.div [ HP.class_ $ HH.ClassName "container" ]
-      [ HH.div [ HP.class_ $ HH.ClassName "sidebar" ]
-          [ HH.a [ HP.href $ show Home ]
-              [ HH.text "Home" ]
-          , HH.ul_
-              [ HH.li_
-                  [ HH.a [ HP.href $ show Simple ]
-                      [ HH.text "Simple day picker" ]
-                  ]
-              , HH.li_
-                  [ HH.a [ HP.href $ show SimpleInput ]
-                      [ HH.text "Simple day picker input" ]
-                  ]
-              , HH.li_
-                  [ HH.a [ HP.href $ show RangeWithTwoInputs ]
-                      [ HH.text "Range with two inputs" ]
-                  ]
-              ]
-          ]
-      , HH.div [ HP.class_ $ HH.ClassName "main" ]
-          [ renderMain state.route today ]
-      ]
+  initialState = { selectedDate: Nothing, route: "" }
 
   eval :: Query ~> H.ParentDSL State Query ChildQuery Slot Void AppM
   eval (RouteChange route next) = do
