@@ -26,8 +26,7 @@ data Query a
   = RouteChange String a
 
 type State =
-  { selectedDate :: Maybe Date
-  , route :: String
+  { route :: String
   }
 
 type ChildQuery = ProxyQ (Const Void) Unit Void
@@ -95,7 +94,7 @@ app today =
   where
 
   initialState :: State
-  initialState = { selectedDate: Nothing, route: "" }
+  initialState = { route: "" }
 
   eval :: Query ~> H.ParentDSL State Query ChildQuery Slot Void AppM
   eval (RouteChange route next) = do
