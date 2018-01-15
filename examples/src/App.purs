@@ -5,11 +5,10 @@ import Prelude
 import Data.Maybe (Maybe(..))
 import Data.Date (Date)
 
-import Data.Either.Nested (Either3)
-import Data.Functor.Coproduct.Nested (Coproduct3)
+import Data.Const (Const)
 
 import Halogen as H
-import Halogen.Component.ChildPath as CP
+import Halogen.Component.Proxy (ProxyQ, proxy)
 import Halogen.HTML as HH
 import Halogen.HTML.Properties as HP
 
@@ -27,17 +26,17 @@ type State =
   , route :: Route
   }
 
-type ChildQuery = Coproduct3 ExpSimple.Query ExpSimpleInput.Query ExpRangeInputs.Query
+type ChildQuery = ProxyQ (Const Void) Unit Void
 
-type Slot = Either3 Unit Unit Unit
+type Slot = Int
 
 renderMain :: Route -> Date -> H.ParentHTML Query ChildQuery Slot AppM
 renderMain Simple today =
-  HH.slot' CP.cp1 unit (ExpSimple.component today) unit absurd
+  HH.slot 1 (proxy $ ExpSimple.component today) unit absurd
 renderMain SimpleInput today =
-  HH.slot' CP.cp2 unit (ExpSimpleInput.component today) unit absurd
+  HH.slot 2 (proxy $ ExpSimpleInput.component today) unit absurd
 renderMain RangeWithTwoInputs today =
-  HH.slot' CP.cp3 unit (ExpRangeInputs.component today) unit absurd
+  HH.slot 3 (proxy $ ExpRangeInputs.component today) unit absurd
 renderMain _ today =
   HH.article_
     [ HH.p_
