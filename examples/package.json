@@ -1,4 +1,6 @@
 {
+  "private": true,
+  "license": "BSD-3-Clause",
   "scripts": {
     "build": "webpack -p --progress",
     "postinstall": "bower install",

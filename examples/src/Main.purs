@@ -2,27 +2,32 @@ module Main (main) where
 
 import Prelude
 
-import Control.Monad.Aff (launchAff_)
 import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Console (CONSOLE)
-import Control.Monad.Eff.Now (NOW, nowDate)
+import Control.Monad.Eff.Now (nowDate)
 
+import Data.Date (Date)
 import Data.DateTime.Locale (LocalValue(..))
+import Data.StrMap as SM
+import Data.Tuple (Tuple(Tuple))
 
-import Routing (hashes)
-
-import Halogen as H
 import Halogen.Aff as HA
-import Halogen.VDom.Driver (runUI)
+import Halogen.Storybook (Stories, runStorybook, proxy)
 
-import App (app, Query(RouteChange))
+import Examples.Simple as ExpSimple
+import Examples.SimpleInput as ExpSimpleInput
+import Examples.RangeWithTwoInputs as ExpRangeInputs
+import Examples.Types (AppM, AppEffects)
 
-main :: Eff (HA.HalogenEffects (console :: CONSOLE, now :: NOW)) Unit
+stories :: Date -> Stories AppM
+stories today = SM.fromFoldable
+  [ Tuple "Simple day picker" $ proxy $ ExpSimple.component today
+  , Tuple "Simple day picker input" $ proxy $ ExpSimpleInput.component today
+  , Tuple "Range with two inputs" $ proxy $ ExpRangeInputs.component today
+  ]
+
+main :: Eff AppEffects Unit
 main = do
-  LocalValue _ date <- nowDate
+  LocalValue _ today <- nowDate
   HA.runHalogenAff do
     body <- HA.awaitBody
-    app' <- runUI (app date) unit body
-    liftEff $ hashes $ \_ next ->
-      launchAff_ $ app'.query (H.action $ RouteChange next)
+    runStorybook (stories today) body

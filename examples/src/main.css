@@ -1,18 +1,10 @@
+@import './Storybook.css';
+@import './DayPicker.css';
+@import "./DayPickerInput.css";
+
 body {
+  margin: 0;
   font-family: sans-serif;
-}
-
-.container {
-  display: flex;
-}
-
-.sidebar {
-  width: 15rem;
-  flex-shrink: 0;
-}
-
-.main {
-  flex: 1;
 }
 
 .row {
@@ -37,4 +29,3 @@ body {
   background-color: #2196F3 !important;
   color: white !important;
 }
-
