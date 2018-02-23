@@ -270,6 +270,7 @@ renderMonth state@{ styles, formatMonth } index =
                 [ styles.control
                 , if showPrev then styles.controlPrev else styles.controlIsHidden
                 ]
+            , HP.type_ HP.ButtonButton
             , HE.onClick (HE.input_ PrevMonth)
             ]
             []
@@ -279,6 +280,7 @@ renderMonth state@{ styles, formatMonth } index =
                 [ styles.control
                 , if showNext then styles.controlNext else styles.controlIsHidden
                 ]
+            , HP.type_ HP.ButtonButton
             , HE.onClick (HE.input_ NextMonth)
             ]
             []
