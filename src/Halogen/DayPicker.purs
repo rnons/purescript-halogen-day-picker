@@ -59,6 +59,7 @@ data SelectedDate
 
 derive instance genericRepSelectedDate :: Generic SelectedDate _
 instance showSelectedDate :: Show SelectedDate where show = genericShow
+derive instance eqSelectedDate :: Eq SelectedDate
 
 -- | Disable dates `Before` or `After` a specific `Date`, can also be a
 -- | combination of them.
@@ -119,16 +120,19 @@ initialState { today, selectedDate, disabledDate, numberOfMonths, styles, format
   }
 
 updateStateWithProps :: Props -> State -> State
-updateStateWithProps { today, selectedDate, disabledDate, numberOfMonths, styles, formatMonth, formatWeekday } =
-  _{ today = today
-   , selectedDate = selectedDate
-   , disabledDate = disabledDate
-   , numberOfMonths = numberOfMonths
-   , firstDateOfFirstMonth = getFirstDateOfFirstMonth selectedDate today
-   , styles = styles
-   , formatMonth = formatMonth
-   , formatWeekday = formatWeekday
-   }
+updateStateWithProps { today, selectedDate, disabledDate, numberOfMonths, styles, formatMonth, formatWeekday } state = state
+  { today = today
+  , selectedDate = selectedDate
+  , disabledDate = disabledDate
+  , numberOfMonths = numberOfMonths
+  , firstDateOfFirstMonth =
+      if selectedDate == state.selectedDate && today == state.today
+      then state.firstDateOfFirstMonth
+      else getFirstDateOfFirstMonth selectedDate today
+  , styles = styles
+  , formatMonth = formatMonth
+  , formatWeekday = formatWeekday
+  }
 
 -- | The behavior of this component includes selecting date and navigating months.
 data Query a
