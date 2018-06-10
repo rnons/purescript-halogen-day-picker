@@ -4,17 +4,14 @@ import Prelude
 
 import Data.Date (Date)
 import Data.Maybe (Maybe(..))
-
+import Effect.Aff.Class (class MonadAff)
+import Examples.Utils (class_)
 import Halogen as H
-import Halogen.HTML as HH
-import Halogen.HTML.Events as HE
-
 import Halogen.DayPicker (SelectedDate(FromTo), DisabledDate(..))
 import Halogen.DayPicker as DayPicker
 import Halogen.DayPickerInput as DayPickerInput
-
-import Examples.Utils (class_)
-import Examples.Types (AppM)
+import Halogen.HTML as HH
+import Halogen.HTML.Events as HE
 
 data Query a
   = HandlePickerFrom DayPickerInput.Message a
@@ -30,7 +27,7 @@ derive instance eqSlot :: Eq Slot
 derive instance ordSlot :: Ord Slot
 
 
-component :: Date -> H.Component HH.HTML Query Unit Void AppM
+component :: forall m. MonadAff m => Date -> H.Component HH.HTML Query Unit Void m
 component today =
   H.parentComponent
     { initialState: const initialState
@@ -46,7 +43,7 @@ component today =
     , toDate: Nothing
     }
 
-  render :: State -> H.ParentHTML Query DayPickerInput.Query Slot AppM
+  render :: State -> H.ParentHTML Query DayPickerInput.Query Slot m
   render { fromDate, toDate } =
     HH.div
       [ class_ "example-range" ]
@@ -96,17 +93,17 @@ component today =
         , value = toDate
         }
 
-  eval :: Query ~> H.ParentDSL State Query DayPickerInput.Query Slot Void AppM
+  eval :: Query ~> H.ParentDSL State Query DayPickerInput.Query Slot Void m
   eval (HandlePickerFrom (DayPickerInput.Select date) next) = do
-      H.modify $ _{ fromDate = Just date }
+      void $ H.modify $ _{ fromDate = Just date }
       _ <- H.query SlotTo $ H.action DayPickerInput.Focus
       pure next
   eval (HandlePickerFrom (DayPickerInput.Input mDate) next) = do
-      H.modify $ _{ fromDate = mDate }
+      void $ H.modify $ _{ fromDate = mDate }
       pure next
   eval (HandlePickerTo (DayPickerInput.Select date) next) = do
-      H.modify $ _{ toDate = Just date }
+      void $ H.modify $ _{ toDate = Just date }
       pure next
   eval (HandlePickerTo (DayPickerInput.Input mDate) next) = do
-      H.modify $ _{ toDate = mDate }
+      void $ H.modify $ _{ toDate = mDate }
       pure next

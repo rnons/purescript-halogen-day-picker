@@ -11,30 +11,25 @@ module Halogen.DayPickerInput
 
 import Prelude
 
-import Control.Monad.Aff (delay, forkAff, liftEff')
-import Control.Monad.Aff.Class (class MonadAff)
-
-import Data.Enum (class BoundedEnum, fromEnum, toEnum)
+import DOM.HTML.Indexed (HTMLinput)
 import Data.Date (Date)
 import Data.Date as Date
+import Data.Enum (class BoundedEnum, fromEnum, toEnum)
 import Data.Int as Int
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.String (Pattern(Pattern), split)
-import Data.Traversable (sequence)
 import Data.Time.Duration (Milliseconds(..))
-
-import DOM.HTML.HTMLElement (focus)
-import DOM.HTML.Indexed (HTMLinput)
-import DOM.HTML.Indexed.InputType (InputType(InputText))
-
+import Data.Traversable (sequence)
+import Effect.Aff (delay, forkAff)
+import Effect.Aff.Class (class MonadAff)
+import Effect.Class (liftEffect)
 import Halogen as H
-import Halogen.Aff (HalogenEffects)
-import Halogen.HTML as HH
-import Halogen.HTML.Properties as HP
-import Halogen.HTML.Events as HE
-
 import Halogen.DayPicker as DayPicker
 import Halogen.DayPickerInput.Styles (Styles, defaultStyles)
+import Halogen.HTML as HH
+import Halogen.HTML.Events as HE
+import Halogen.HTML.Properties as HP
+import Web.HTML.HTMLElement (focus)
 
 defaultFormatDate :: Date -> String
 defaultFormatDate date =
@@ -142,8 +137,8 @@ inputRef :: H.RefLabel
 inputRef = H.RefLabel "input"
 
 render
-  :: forall eff m
-  .  MonadAff (HalogenEffects eff) m
+  :: forall m
+  .  MonadAff m
   => State -> H.ParentHTML Query DayPicker.Query Unit m
 render state@{ styles, inputProps, value } =
   HH.div
@@ -152,7 +147,7 @@ render state@{ styles, inputProps, value } =
     , HE.onMouseUp $ HE.input_ OnMouseUp
     ]
     [ HH.input $ inputProps <>
-        [ HP.type_ InputText
+        [ HP.type_ HP.InputText
         , HP.class_ styles.input
         , HP.value value
         , HP.placeholder state.placeholder
@@ -171,9 +166,7 @@ render state@{ styles, inputProps, value } =
 
 -- | A components that includes a text input and `DayPicker.dayPicker`.
 dayPickerInput
-  :: forall eff m
-  .  MonadAff (HalogenEffects eff) m
-  => H.Component HH.HTML Query Props Message m
+  :: forall m. MonadAff m => H.Component HH.HTML Query Props Message m
 dayPickerInput = H.parentComponent
   { initialState
   , render
@@ -185,11 +178,11 @@ dayPickerInput = H.parentComponent
   eval :: Query ~> H.ParentDSL State Query DayPicker.Query Slot Message m
 
   eval (OnReceiveProps input next) = do
-    H.modify $ updateStateWithProps input
+    void $ H.modify $ updateStateWithProps input
     pure next
 
   eval (HandleDayPicker date next) = do
-    H.modify $ _{ focused = false }
+    void $ H.modify $ _{ focused = false }
     H.raise $ Select date
     pure next
 
@@ -199,29 +192,29 @@ dayPickerInput = H.parentComponent
       Just input -> do
         _ <- H.liftAff $ forkAff $ do
           delay $ Milliseconds 10.0
-          liftEff' $ focus input
+          liftEffect $ focus input
         pure next
       Nothing -> pure next
 
   eval (OnMouseDown next) = do
-    H.modify $ _{ clickedInside = true }
+    void $ H.modify $ _{ clickedInside = true }
     pure next
 
   eval (OnMouseUp next) = do
-    H.modify $ _{ clickedInside = false }
+    void $ H.modify $ _{ clickedInside = false }
     pure next
 
   eval (OnFocus next) = do
-    H.modify $ _{ focused = true }
+    void $ H.modify $ _{ focused = true }
     pure next
 
   eval (OnBlur next) = do
     H.gets _.clickedInside >>= \clickedInside -> do
-      H.modify $ _{ clickedInside = false }
+      void $ H.modify $ _{ clickedInside = false }
       if clickedInside
         then eval (Focus next)
         else do
-          H.modify $ _{ focused = false }
+          void $ H.modify $ _{ focused = false }
           pure next
 
   eval (OnInput value next) = do
