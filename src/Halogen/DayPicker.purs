@@ -97,41 +97,23 @@ defaultProps today =
 -- | The only interal state is `firstDateOfFirstMonth`, which is the first date
 -- | of currently rendered months. Other states are all passed in.
 type State =
-  { today :: Date
+  { props :: Props
   , firstDateOfFirstMonth :: Date
-  , selectedDate :: SelectedDate
-  , disabledDate :: DisabledDate
-  , numberOfMonths :: Int
-  , styles :: Styles
-  , formatMonth :: Date -> String
-  , formatWeekday :: Weekday -> String
   }
 
 initialState :: Props -> State
-initialState { today, selectedDate, disabledDate, numberOfMonths, styles, formatMonth, formatWeekday } =
-  { today
-  , firstDateOfFirstMonth: getFirstDateOfFirstMonth selectedDate today
-  , selectedDate
-  , disabledDate
-  , numberOfMonths
-  , styles
-  , formatMonth
-  , formatWeekday
+initialState props =
+  { props
+  , firstDateOfFirstMonth: getFirstDateOfFirstMonth props
   }
 
 updateStateWithProps :: Props -> State -> State
-updateStateWithProps { today, selectedDate, disabledDate, numberOfMonths, styles, formatMonth, formatWeekday } state = state
-  { today = today
-  , selectedDate = selectedDate
-  , disabledDate = disabledDate
-  , numberOfMonths = numberOfMonths
+updateStateWithProps props state = state
+  { props = props
   , firstDateOfFirstMonth =
-      if selectedDate == state.selectedDate && today == state.today
+      if props.selectedDate == state.props.selectedDate && props.today == state.props.today
       then state.firstDateOfFirstMonth
-      else getFirstDateOfFirstMonth selectedDate today
-  , styles = styles
-  , formatMonth = formatMonth
-  , formatWeekday = formatWeekday
+      else getFirstDateOfFirstMonth props
   }
 
 -- | The behavior of this component includes selecting date and navigating months.
@@ -200,23 +182,25 @@ firstDateOfNextMonth date =
     dateTime = DateTime.DateTime lastDate bottom
     newDateTime = DateTime.adjust (Duration.Days 1.0) dateTime
 
-getFirstDateOfFirstMonth :: SelectedDate -> Date -> Date
-getFirstDateOfFirstMonth (Single date) _ = firstDateOfMonth date
-getFirstDateOfFirstMonth (FromTo (Just date) _) _ = firstDateOfMonth date
-getFirstDateOfFirstMonth _ today = firstDateOfMonth today
+getFirstDateOfFirstMonth :: Props -> Date
+getFirstDateOfFirstMonth { selectedDate, today} =
+  case selectedDate, today of
+    (Single date), _ -> firstDateOfMonth date
+    (FromTo (Just date) _), _ -> firstDateOfMonth date
+    _, day -> firstDateOfMonth day
 
 renderTableHeader :: State -> Styles -> H.ComponentHTML Query
-renderTableHeader { formatWeekday } styles =
+renderTableHeader { props } styles =
   HH.thead_
-    [ HH.tr_ (map render' weekdays)
-    ]
+  [ HH.tr_ (map render' weekdays)
+  ]
   where
-    render' day =
-      HH.td [ HP.class_ styles.weekday ] [ HH.text $ formatWeekday day ]
+  render' day =
+    HH.td [ HP.class_ styles.weekday ] [ HH.text $ props.formatWeekday day ]
 
 renderDay :: State -> Date -> Maybe Day -> H.ComponentHTML Query
 renderDay _ _ Nothing = HH.td_ [ HH.text "" ]
-renderDay state@{ styles, selectedDate, today } firstDate (Just day) =
+renderDay state@{ props: { styles, selectedDate, today } } firstDate (Just day) =
   HH.td
     props
     [ HH.text $ show $ fromEnum day
@@ -226,15 +210,15 @@ renderDay state@{ styles, selectedDate, today } firstDate (Just day) =
     month = Date.month firstDate
     date = Date.canonicalDate year month day
     todayCls = if today == date then [ styles.dayToday ] else []
-    isDisabled = isDateDisabled state.disabledDate date
+    isDisabled = isDateDisabled state.props.disabledDate date
     disabled =
       if isDisabled then [ styles.dayIsDisabled ] else []
     selected =
-      if isDateSelected state.selectedDate date then [ styles.dayIsSelected ] else []
+      if isDateSelected selectedDate date then [ styles.dayIsSelected ] else []
     from =
-      if isDateFrom state.selectedDate date then [ styles.dayFrom ] else []
+      if isDateFrom selectedDate date then [ styles.dayFrom ] else []
     to =
-      if isDateTo state.selectedDate date then [ styles.dayTo ] else []
+      if isDateTo selectedDate date then [ styles.dayTo ] else []
     className =
       [ styles.day ] <> todayCls <> from <> to <> selected <> disabled
     props =
@@ -264,7 +248,7 @@ renderTableBody state firstDate =
     lastRowIndex = (firstDayColIndex + fromEnum lastDay - 1) / 7
 
 renderMonth :: State -> Int -> H.ComponentHTML Query
-renderMonth state@{ styles, formatMonth } index =
+renderMonth state@{ props: { styles, formatMonth } } index =
   HH.div
     [ HP.class_ styles.month ]
     [ HH.div
@@ -296,16 +280,16 @@ renderMonth state@{ styles, formatMonth } index =
         ]
     ]
   where
-    firstDate = applyN index firstDateOfNextMonth state.firstDateOfFirstMonth
-    headText = formatMonth firstDate
-    showPrev = index == 0
-    showNext = index + 1 == state.numberOfMonths
+  firstDate = applyN index firstDateOfNextMonth state.firstDateOfFirstMonth
+  headText = formatMonth firstDate
+  showPrev = index == 0
+  showNext = index + 1 == state.props.numberOfMonths
 
 render :: State -> H.ComponentHTML Query
-render state@{ styles } =
+render state@{ props } =
   HH.div
-    [ HP.class_ styles.root ]
-    $ mapWithIndex (\index _ -> renderMonth state index) (1..state.numberOfMonths)
+    [ HP.class_ props.styles.root ]
+    $ mapWithIndex (\index _ -> renderMonth state index) (1..props.numberOfMonths)
 
 -- | A simple calendar that raises selected date.
 dayPicker :: forall m. H.Component HH.HTML Query Props Message m
