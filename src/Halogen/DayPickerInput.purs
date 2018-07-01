@@ -176,13 +176,12 @@ dayPickerInput = H.parentComponent
   where
 
   eval :: Query ~> H.ParentDSL State Query DayPicker.Query Slot Message m
-
   eval (OnReceiveProps input next) = do
-    void $ H.modify $ updateStateWithProps input
+    H.modify_ $ updateStateWithProps input
     pure next
 
   eval (HandleDayPicker date next) = do
-    void $ H.modify $ _{ focused = false }
+    H.modify_ $ _{ focused = false }
     H.raise $ Select date
     pure next
 
@@ -197,24 +196,24 @@ dayPickerInput = H.parentComponent
       Nothing -> pure next
 
   eval (OnMouseDown next) = do
-    void $ H.modify $ _{ clickedInside = true }
+    H.modify_ $ _{ clickedInside = true }
     pure next
 
   eval (OnMouseUp next) = do
-    void $ H.modify $ _{ clickedInside = false }
+    H.modify_ $ _{ clickedInside = false }
     pure next
 
   eval (OnFocus next) = do
-    void $ H.modify $ _{ focused = true }
+    H.modify_ $ _{ focused = true }
     pure next
 
   eval (OnBlur next) = do
     H.gets _.clickedInside >>= \clickedInside -> do
-      void $ H.modify $ _{ clickedInside = false }
+      H.modify_ $ _{ clickedInside = false }
       if clickedInside
         then eval (Focus next)
         else do
-          void $ H.modify $ _{ focused = false }
+          H.modify_ $ _{ focused = false }
           pure next
 
   eval (OnInput value next) = do

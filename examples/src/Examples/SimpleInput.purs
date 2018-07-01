@@ -56,8 +56,8 @@ component today =
 
   eval :: Query ~> H.ParentDSL State Query DayPickerInput.Query Slot Void m
   eval (HandlePicker (DayPickerInput.Select date) next) = do
-      void $ H.modify $ _{ selectedDate = Single date }
+      H.modify_ $ _{ selectedDate = Single date }
       pure next
   eval (HandlePicker (DayPickerInput.Input mDate) next) = do
-      void $ H.modify $ _{ selectedDate = maybe NoneSelected Single mDate }
+      H.modify_ $ _{ selectedDate = maybe NoneSelected Single mDate }
       pure next
