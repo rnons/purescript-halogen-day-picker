@@ -4,6 +4,7 @@
 module Halogen.DayPicker
   ( SelectedDate(..)
   , DisabledDate(..)
+  , Mode(..)
   , Props
   , Query(..)
   , Message
@@ -24,13 +25,11 @@ import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Time.Duration as Duration
-
 import Halogen as H
+import Halogen.DayPicker.Styles (Styles, defaultStyles)
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
-
-import Halogen.DayPicker.Styles (Styles, defaultStyles)
 
 weekdays :: Array Weekday
 weekdays = [ Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday ]
@@ -70,10 +69,15 @@ data DisabledDate
   | After Date
   | DisabledArray (Array DisabledDate)
 
+data Mode
+  = SimpleMode
+  | ToMode
+
 -- | Month title, weekday text, class name can be customized. Note that `today`
 -- | is not an internal state, but passed in.
 type Props =
-  { today :: Date
+  { mode :: Mode
+  , today :: Date
   , selectedDate :: SelectedDate
   , disabledDate :: DisabledDate
   , numberOfMonths :: Int
@@ -85,7 +89,8 @@ type Props =
 -- | Construct default props from `today` date.
 defaultProps :: Date -> Props
 defaultProps today =
-  { today: today
+  { mode: SimpleMode
+  , today: today
   , selectedDate: NoneSelected
   , disabledDate: NoneDisabled
   , numberOfMonths: 1
@@ -183,11 +188,16 @@ firstDateOfNextMonth date =
     newDateTime = DateTime.adjust (Duration.Days 1.0) dateTime
 
 getFirstDateOfFirstMonth :: Props -> Date
-getFirstDateOfFirstMonth { selectedDate, today} =
-  case selectedDate, today of
-    (Single date), _ -> firstDateOfMonth date
-    (FromTo (Just date) _), _ -> firstDateOfMonth date
-    _, day -> firstDateOfMonth day
+getFirstDateOfFirstMonth { selectedDate, mode, today, numberOfMonths } =
+  case selectedDate of
+    Single date -> firstDateOfMonth date
+    FromTo startDate endDate ->
+      case mode, startDate, endDate of
+        SimpleMode, (Just date), _ -> firstDateOfMonth date
+        ToMode, _, (Just date) ->
+          applyN (numberOfMonths - 1) firstDateOfPrevMonth (firstDateOfMonth date)
+        _, _, _ -> firstDateOfMonth today
+    _ -> firstDateOfMonth today
 
 renderTableHeader :: State -> Styles -> H.ComponentHTML Query
 renderTableHeader { props } styles =

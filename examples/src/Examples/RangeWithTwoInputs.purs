@@ -8,14 +8,14 @@ import Effect.Aff.Class (class MonadAff)
 import Examples.Utils (class_)
 import Halogen as H
 import Halogen.DayPicker (SelectedDate(FromTo), DisabledDate(..))
-import Halogen.DayPicker as DayPicker
-import Halogen.DayPickerInput as DayPickerInput
+import Halogen.DayPicker as DP
+import Halogen.DayPickerInput as DPI
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 
 data Query a
-  = HandlePickerFrom DayPickerInput.Message a
-  | HandlePickerTo DayPickerInput.Message a
+  = HandlePickerFrom DPI.Message a
+  | HandlePickerTo DPI.Message a
 
 type State =
   { fromDate :: Maybe Date
@@ -43,7 +43,7 @@ component today =
     , toDate: Nothing
     }
 
-  render :: State -> H.ParentHTML Query DayPickerInput.Query Slot m
+  render :: State -> H.ParentHTML Query DPI.Query Slot m
   render { fromDate, toDate } =
     HH.div
       [ class_ "example-range" ]
@@ -54,11 +54,11 @@ component today =
       , HH.div
           [ class_ "row"]
           [ HH.slot SlotFrom
-              DayPickerInput.dayPickerInput
+              DPI.dayPickerInput
               fromProps
               (HE.input HandlePickerFrom)
           , HH.slot SlotTo
-              DayPickerInput.dayPickerInput
+              DPI.dayPickerInput
               toProps
               (HE.input HandlePickerTo)
           ]
@@ -66,7 +66,7 @@ component today =
           [ HH.text "hello world" ]
       ]
     where
-    dayPickerProps = (DayPicker.defaultProps today)
+    dayPickerProps = (DP.defaultProps today)
       { selectedDate = FromTo fromDate toDate
       , numberOfMonths = 2
       , disabledDate = Before today
@@ -75,35 +75,35 @@ component today =
       case toDate of
         Just to ->
           dayPickerProps
-            { disabledDate = DayPicker.DisabledArray [Before today, After to] }
+            { disabledDate = DP.DisabledArray [Before today, After to] }
         _ -> dayPickerProps
     pickerToProps =
       case fromDate of
         Just from ->
-          dayPickerProps { disabledDate = Before from }
-        _ -> dayPickerProps
+          dayPickerProps { mode = DP.ToMode, disabledDate = Before from }
+        _ -> dayPickerProps { mode = DP.ToMode }
     fromProps =
-      (DayPickerInput.defaultProps pickerFromProps)
+      (DPI.defaultProps pickerFromProps)
         { placeholder = "FROM"
         , value = fromDate
         }
     toProps =
-      (DayPickerInput.defaultProps pickerToProps)
+      (DPI.defaultProps pickerToProps)
         { placeholder = "TO"
         , value = toDate
         }
 
-  eval :: Query ~> H.ParentDSL State Query DayPickerInput.Query Slot Void m
-  eval (HandlePickerFrom (DayPickerInput.Select date) next) = do
+  eval :: Query ~> H.ParentDSL State Query DPI.Query Slot Void m
+  eval (HandlePickerFrom (DPI.Select date) next) = do
       H.modify_ $ _{ fromDate = Just date }
-      _ <- H.query SlotTo $ H.action DayPickerInput.Focus
+      _ <- H.query SlotTo $ H.action DPI.Focus
       pure next
-  eval (HandlePickerFrom (DayPickerInput.Input mDate) next) = do
+  eval (HandlePickerFrom (DPI.Input mDate) next) = do
       H.modify_ $ _{ fromDate = mDate }
       pure next
-  eval (HandlePickerTo (DayPickerInput.Select date) next) = do
+  eval (HandlePickerTo (DPI.Select date) next) = do
       H.modify_ $ _{ toDate = Just date }
       pure next
-  eval (HandlePickerTo (DayPickerInput.Input mDate) next) = do
+  eval (HandlePickerTo (DPI.Input mDate) next) = do
       H.modify_ $ _{ toDate = mDate }
       pure next
