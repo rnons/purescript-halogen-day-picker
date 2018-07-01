@@ -310,19 +310,17 @@ dayPicker = H.component
   , receiver: HE.input OnReceiveProps
   }
   where
-
   eval :: Query ~> H.ComponentDSL State Query Message m
-  eval (OnReceiveProps input next) = do
+  eval (OnReceiveProps input n) = n <$ do
     H.modify_ $ updateStateWithProps input
-    pure next
-  eval (Click date next) = do
+
+  eval (Click date n) = n <$ do
     H.raise date
-    pure next
-  eval (PrevMonth next) = do
+
+  eval (PrevMonth n) = n <$ do
     H.modify_ $ \state ->
       state { firstDateOfFirstMonth = firstDateOfPrevMonth state.firstDateOfFirstMonth }
-    pure next
-  eval (NextMonth next) = do
+
+  eval (NextMonth n) = n <$ do
     H.modify_ $ \state ->
       state { firstDateOfFirstMonth = firstDateOfNextMonth state.firstDateOfFirstMonth }
-    pure next

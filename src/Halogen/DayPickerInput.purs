@@ -176,46 +176,38 @@ dayPickerInput = H.parentComponent
   where
 
   eval :: Query ~> H.ParentDSL State Query DayPicker.Query Slot Message m
-  eval (OnReceiveProps input next) = do
+  eval (OnReceiveProps input n) = n <$ do
     H.modify_ $ updateStateWithProps input
-    pure next
 
-  eval (HandleDayPicker date next) = do
+  eval (HandleDayPicker date n) = n <$ do
     H.modify_ $ _{ focused = false }
     H.raise $ Select date
-    pure next
 
-  eval (Focus next) = do
+  eval (Focus n) = n <$ do
     mInput <- H.getHTMLElementRef inputRef
     case mInput of
       Just input -> do
-        _ <- H.liftAff $ forkAff $ do
+        void $ H.liftAff $ forkAff $ do
           delay $ Milliseconds 10.0
           liftEffect $ focus input
-        pure next
-      Nothing -> pure next
+      Nothing -> pure unit
 
-  eval (OnMouseDown next) = do
+  eval (OnMouseDown n) = n <$ do
     H.modify_ $ _{ clickedInside = true }
-    pure next
 
-  eval (OnMouseUp next) = do
+  eval (OnMouseUp n) = n <$ do
     H.modify_ $ _{ clickedInside = false }
-    pure next
 
-  eval (OnFocus next) = do
+  eval (OnFocus n) = n <$ do
     H.modify_ $ _{ focused = true }
-    pure next
 
-  eval (OnBlur next) = do
+  eval (OnBlur n) = n <$ do
     H.gets _.clickedInside >>= \clickedInside -> do
       H.modify_ $ _{ clickedInside = false }
       if clickedInside
-        then eval (Focus next)
+        then eval (Focus unit)
         else do
           H.modify_ $ _{ focused = false }
-          pure next
 
-  eval (OnInput value next) = do
+  eval (OnInput value n) = n <$ do
     H.gets _.parseDate >>= \parseDate -> H.raise $ Input $ parseDate value
-    pure next
