@@ -69,18 +69,18 @@ component today =
     dayPickerProps = (DP.defaultProps today)
       { selectedDate = SelectedRange fromDate toDate
       , numberOfMonths = 2
-      , disabledDate = Before today
+      , disabledDate = DisabledBefore today
       }
     pickerFromProps =
       case toDate of
         Just to ->
           dayPickerProps
-            { disabledDate = DP.DisabledArray [Before today, After to] }
+            { disabledDate = DP.DisabledArray [DisabledBefore today, DisabledAfter to] }
         _ -> dayPickerProps
     pickerToProps =
       case fromDate of
         Just from ->
-          dayPickerProps { mode = DP.ToMode, disabledDate = Before from }
+          dayPickerProps { mode = DP.ToMode, disabledDate = DisabledBefore from }
         _ -> dayPickerProps { mode = DP.ToMode }
     fromProps =
       (DPI.defaultProps pickerFromProps)

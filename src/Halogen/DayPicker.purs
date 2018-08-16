@@ -52,25 +52,23 @@ defaultFormatWeekday Saturday = "S"
 defaultFormatWeekday Sunday = "S"
 
 -- | `SelectedDate` can be a single `Date` or a range of `Date`s.
--- TODO: support `Set Date`
 data SelectedDate
   = SelectedNone
   | SelectedSingle Date
   | SelectedSet (Set Date)
-  -- = SelectedSet (Set Date)
   | SelectedRange (Maybe Date) (Maybe Date)
 
 derive instance genericRepSelectedDate :: Generic SelectedDate _
 instance showSelectedDate :: Show SelectedDate where show = genericShow
 derive instance eqSelectedDate :: Eq SelectedDate
 
--- | Disable dates `Before` or `After` a specific `Date`, can also be a
--- | combination of them.
+-- | Disable dates `DisabledBefore` or `DisabledAfter` a specific `Date`, can
+-- | also be a combination of them.
 -- TODO: support `Set Date` and `Date -> Boolean`
 data DisabledDate
-  = NoneDisabled
-  | Before Date
-  | After Date
+  = DisabledNone
+  | DisabledBefore Date
+  | DisabledAfter Date
   | DisabledArray (Array DisabledDate)
 
 data Mode
@@ -96,7 +94,7 @@ defaultProps today =
   { mode: SimpleMode
   , today: today
   , selectedDate: SelectedSet Set.empty
-  , disabledDate: NoneDisabled
+  , disabledDate: DisabledNone
   , numberOfMonths: 1
   , styles: defaultStyles
   , formatMonth: defaultFormatMonth
@@ -156,9 +154,9 @@ isDateTo (SelectedRange _ (Just to)) date = to == date
 isDateTo _ _ = false
 
 isDateDisabled :: DisabledDate -> Date -> Boolean
-isDateDisabled NoneDisabled _ = false
-isDateDisabled (Before d) date = date < d
-isDateDisabled (After d) date = date > d
+isDateDisabled DisabledNone _ = false
+isDateDisabled (DisabledBefore d) date = date < d
+isDateDisabled (DisabledAfter d) date = date > d
 isDateDisabled (DisabledArray rules) date = any (flip isDateDisabled $ date) rules
 
 firstDateOfMonth :: Date -> Date
