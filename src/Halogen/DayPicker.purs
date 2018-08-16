@@ -24,6 +24,8 @@ import Data.Foldable (any)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Set (Set)
+import Data.Set as Set
 import Data.Time.Duration as Duration
 import Halogen as H
 import Halogen.DayPicker.Styles (Styles, defaultStyles)
@@ -52,9 +54,11 @@ defaultFormatWeekday Sunday = "S"
 -- | `SelectedDate` can be a single `Date` or a range of `Date`s.
 -- TODO: support `Set Date`
 data SelectedDate
-  = NoneSelected
-  | Single Date
-  | FromTo (Maybe Date) (Maybe Date)
+  = SelectedNone
+  | SelectedSingle Date
+  | SelectedSet (Set Date)
+  -- = SelectedSet (Set Date)
+  | SelectedRange (Maybe Date) (Maybe Date)
 
 derive instance genericRepSelectedDate :: Generic SelectedDate _
 instance showSelectedDate :: Show SelectedDate where show = genericShow
@@ -91,7 +95,7 @@ defaultProps :: Date -> Props
 defaultProps today =
   { mode: SimpleMode
   , today: today
-  , selectedDate: NoneSelected
+  , selectedDate: SelectedSet Set.empty
   , disabledDate: NoneDisabled
   , numberOfMonths: 1
   , styles: defaultStyles
@@ -136,18 +140,19 @@ applyN n fn val =
     foldl (\acc _ -> fn acc) val (replicate n unit)
 
 isDateSelected :: SelectedDate -> Date -> Boolean
-isDateSelected NoneSelected _ = false
-isDateSelected (Single d) date = d == date
-isDateSelected (FromTo (Just from) (Just to)) date = from <= date && date <= to
-isDateSelected (FromTo (Just from) _) date = from == date
-isDateSelected (FromTo _ _) date = false
+isDateSelected SelectedNone _ = false
+isDateSelected (SelectedSingle d) date = d == date
+isDateSelected (SelectedSet s) date = Set.member date s
+isDateSelected (SelectedRange (Just from) (Just to)) date = from <= date && date <= to
+isDateSelected (SelectedRange (Just from) _) date = from == date
+isDateSelected (SelectedRange _ _) date = false
 
 isDateFrom :: SelectedDate -> Date -> Boolean
-isDateFrom (FromTo (Just from) _) date = from == date
+isDateFrom (SelectedRange (Just from) _) date = from == date
 isDateFrom _ _ = false
 
 isDateTo :: SelectedDate -> Date -> Boolean
-isDateTo (FromTo _ (Just to)) date = to == date
+isDateTo (SelectedRange _ (Just to)) date = to == date
 isDateTo _ _ = false
 
 isDateDisabled :: DisabledDate -> Date -> Boolean
@@ -190,14 +195,15 @@ firstDateOfNextMonth date =
 getFirstDateOfFirstMonth :: Props -> Date
 getFirstDateOfFirstMonth { selectedDate, mode, today, numberOfMonths } =
   case selectedDate of
-    Single date -> firstDateOfMonth date
-    FromTo startDate endDate ->
+    SelectedNone -> firstDateOfMonth today
+    SelectedSingle date -> firstDateOfMonth date
+    SelectedSet set -> firstDateOfMonth $ fromMaybe today $ Set.findMin set
+    SelectedRange startDate endDate ->
       case mode, startDate, endDate of
         SimpleMode, (Just date), _ -> firstDateOfMonth date
         ToMode, _, (Just date) ->
           applyN (numberOfMonths - 1) firstDateOfPrevMonth (firstDateOfMonth date)
         _, _, _ -> firstDateOfMonth today
-    _ -> firstDateOfMonth today
 
 renderTableHeader :: State -> Styles -> H.ComponentHTML Query
 renderTableHeader { props } styles =

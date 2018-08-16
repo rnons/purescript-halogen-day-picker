@@ -3,6 +3,7 @@ module Main (main) where
 import Prelude
 
 import Data.Date (Date)
+import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(Tuple))
 import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
@@ -26,4 +27,7 @@ main = do
   today <- nowDate
   HA.runHalogenAff do
     body <- HA.awaitBody
-    runStorybook (stories today) body
+    runStorybook
+      { stories: stories today
+      , logo: Nothing
+      } body

@@ -33,7 +33,7 @@ component today =
   where
 
   initialState :: State
-  initialState = { selectedDate: DayPicker.NoneSelected }
+  initialState = { selectedDate: DayPicker.SelectedNone  }
 
   render :: State -> H.ParentHTML Query DayPicker.Query Slot m
   render state =
@@ -52,5 +52,5 @@ component today =
   eval :: Query ~> H.ParentDSL State Query DayPicker.Query Slot Void m
   eval = case _ of
     HandleDayPicker date next -> do
-      H.modify_ (\state -> state { selectedDate = DayPicker.Single date })
+      H.modify_ (\state -> state { selectedDate = DayPicker.SelectedSingle date })
       pure next

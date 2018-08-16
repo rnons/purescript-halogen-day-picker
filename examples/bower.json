@@ -9,7 +9,9 @@
     "bower_components"
   ],
   "dependencies": {
-    "purescript-now": "^4.0.0"
+    "purescript-now": "^4.0.0",
+    "purescript-halogen-day-picker": "*",
+    "purescript-halogen-storybook": "^0.4.0"
   },
   "devDependencies": {
     "purescript-psci-support": "^4.0.0"

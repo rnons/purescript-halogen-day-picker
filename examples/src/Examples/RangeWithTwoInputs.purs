@@ -7,7 +7,7 @@ import Data.Maybe (Maybe(..))
 import Effect.Aff.Class (class MonadAff)
 import Examples.Utils (class_)
 import Halogen as H
-import Halogen.DayPicker (SelectedDate(FromTo), DisabledDate(..))
+import Halogen.DayPicker (SelectedDate(SelectedRange), DisabledDate(..))
 import Halogen.DayPicker as DP
 import Halogen.DayPickerInput as DPI
 import Halogen.HTML as HH
@@ -67,7 +67,7 @@ component today =
       ]
     where
     dayPickerProps = (DP.defaultProps today)
-      { selectedDate = FromTo fromDate toDate
+      { selectedDate = SelectedRange fromDate toDate
       , numberOfMonths = 2
       , disabledDate = Before today
       }

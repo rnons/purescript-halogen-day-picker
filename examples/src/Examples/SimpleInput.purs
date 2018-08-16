@@ -32,7 +32,7 @@ component today =
   where
 
   initialState :: State
-  initialState = { selectedDate: NoneSelected }
+  initialState = { selectedDate: SelectedNone }
 
   render :: State -> H.ParentHTML Query DayPickerInput.Query Slot m
   render state =
@@ -50,14 +50,14 @@ component today =
     dayPickerProps = (DayPicker.defaultProps today) { selectedDate = state.selectedDate }
     value =
       case state.selectedDate of
-        Single date -> Just date
+        SelectedSingle date -> Just date
         _ -> Nothing
     props = (DayPickerInput.defaultProps dayPickerProps) { value = value }
 
   eval :: Query ~> H.ParentDSL State Query DayPickerInput.Query Slot Void m
   eval (HandlePicker (DayPickerInput.Select date) next) = do
-      H.modify_ $ _{ selectedDate = Single date }
+      H.modify_ $ _{ selectedDate = SelectedSingle date }
       pure next
   eval (HandlePicker (DayPickerInput.Input mDate) next) = do
-      H.modify_ $ _{ selectedDate = maybe NoneSelected Single mDate }
+      H.modify_ $ _{ selectedDate = maybe SelectedNone SelectedSingle mDate }
       pure next
