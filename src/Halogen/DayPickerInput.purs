@@ -148,7 +148,6 @@ render state@{ styles, inputProps, value } =
     ]
     [ HH.input $ inputProps <>
         [ HP.type_ HP.InputText
-        , HP.class_ styles.input
         , HP.value value
         , HP.placeholder state.placeholder
         , HP.ref inputRef
