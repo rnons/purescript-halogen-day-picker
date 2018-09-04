@@ -117,10 +117,6 @@ initialState props =
 updateStateWithProps :: Props -> State -> State
 updateStateWithProps props state = state
   { props = props
-  , firstDateOfFirstMonth =
-      if props.selectedDate == state.props.selectedDate && props.today == state.props.today
-      then state.firstDateOfFirstMonth
-      else getFirstDateOfFirstMonth props
   }
 
 -- | The behavior of this component includes selecting date and navigating months.
