@@ -21,7 +21,7 @@ stories today = Object.fromFoldable
   [ Tuple "Simple day picker" $ proxy $ ExpSimple.component today
   , Tuple "Simple day picker input" $ proxy $ ExpSimpleInput.component today
   , Tuple "Range with two inputs" $ proxy $ ExpRangeInputs.component today
-  , Tuple "Multipe days picker" $ proxy $ ExpMultiple.component today
+  , Tuple "Multiple days picker" $ proxy $ ExpMultiple.component today
   ]
 
 main :: Effect Unit
