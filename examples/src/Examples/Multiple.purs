@@ -6,23 +6,23 @@ import Data.Date (Date)
 import Data.Maybe (Maybe(..))
 import Data.Set (Set)
 import Data.Set as Set
+import Data.Symbol (SProxy(..))
 import Halogen as H
-import Halogen.DayPicker as DayPicker
+import Halogen.DayPicker as DP
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 
 data Query a
-  = HandleDayPicker DayPicker.Message a
+  = HandleDayPicker DP.Message a
 
 type State =
   { today :: Date
   , selectedDate :: Set Date
   }
 
-data Slot = DayPickerSlot
-derive instance eqDayPickerSlot :: Eq Slot
-derive instance ordDayPickerSlot :: Ord Slot
+type Slot = (picker :: H.Slot DP.Query DP.Message Unit)
 
+_picker = SProxy :: SProxy "picker"
 
 initialState :: Date -> State
 initialState today =
@@ -30,7 +30,7 @@ initialState today =
   , selectedDate: Set.empty
   }
 
-render :: forall m. State -> H.ParentHTML Query DayPicker.Query Slot m
+render :: forall m. State -> H.ComponentHTML Query Slot m
 render state =
   HH.div_
   [ HH.h1_
@@ -38,22 +38,24 @@ render state =
   , HH.p_
     [ HH.text $ "Click to select one or more days" ]
   , HH.div_
-    [ HH.slot DayPickerSlot DayPicker.dayPicker props (HE.input HandleDayPicker) ]
+    [ HH.slot _picker unit DP.dayPicker props (HE.input HandleDayPicker) ]
   , HH.text $ "You selected " <> show state.selectedDate
   ]
   where
-  props = (DayPicker.defaultProps state.today)
-    { selectedDate = DayPicker.SelectedSet state.selectedDate }
+  props = (DP.defaultProps state.today)
+    { selectedDate = DP.SelectedSet state.selectedDate }
 
 component :: forall m. Date -> H.Component HH.HTML Query Unit Void m
-component today = H.parentComponent
+component today = H.component
   { initialState: const $ initialState today
   , render
   , eval
   , receiver: const Nothing
+  , initializer: Nothing
+  , finalizer: Nothing
   }
   where
-  eval :: Query ~> H.ParentDSL State Query DayPicker.Query Slot Void m
+  eval :: Query ~> H.HalogenM State Query Slot Void m
   eval (HandleDayPicker date n) = n <$ do
     H.modify_ $ \s -> s
       { selectedDate =

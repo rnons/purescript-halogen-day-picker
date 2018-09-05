@@ -129,6 +129,8 @@ data Query a
 -- | This component raises selected `Date` to be handled by parent component.
 type Message = Date
 
+type HTML m = H.ComponentHTML Query () m
+
 applyN :: forall a. Int -> (a -> a) -> a -> a
 applyN n fn val =
     foldl (\acc _ -> fn acc) val (replicate n unit)
@@ -199,7 +201,7 @@ getFirstDateOfFirstMonth { selectedDate, mode, today, numberOfMonths } =
           applyN (numberOfMonths - 1) firstDateOfPrevMonth (firstDateOfMonth date)
         _, _, _ -> firstDateOfMonth today
 
-renderTableHeader :: State -> Styles -> H.ComponentHTML Query
+renderTableHeader :: forall m. State -> Styles -> HTML m
 renderTableHeader { props } styles =
   HH.thead_
   [ HH.tr_ (map render' weekdays)
@@ -208,7 +210,7 @@ renderTableHeader { props } styles =
   render' day =
     HH.td [ HP.class_ styles.weekday ] [ HH.text $ props.formatWeekday day ]
 
-renderDay :: State -> Date -> Maybe Day -> H.ComponentHTML Query
+renderDay :: forall m. State -> Date -> Maybe Day -> HTML m
 renderDay _ _ Nothing = HH.td_ [ HH.text "" ]
 renderDay state@{ props: { styles, selectedDate, today } } firstDate (Just day) =
   HH.td
@@ -236,7 +238,7 @@ renderDay state@{ props: { styles, selectedDate, today } } firstDate (Just day) 
       then [ HP.classes className ]
       else [ HP.classes className, HE.onClick $ HE.input (const $ Click date) ]
 
-renderDayRow :: State -> Date -> Int -> Day -> Int -> H.ComponentHTML Query
+renderDayRow :: forall m. State -> Date -> Int -> Day -> Int -> HTML m
 renderDayRow state firstDate firstDayColIndex lastDay rowIndex =
   HH.tr_ $
     replicate startCol (renderDay state firstDate Nothing) <>
@@ -247,7 +249,7 @@ renderDayRow state firstDate firstDayColIndex lastDay rowIndex =
     endDayInt = if startDayInt + 6 < fromEnum lastDay
                 then startDayInt + 6 - startCol else fromEnum lastDay
 
-renderTableBody :: State -> Date -> H.ComponentHTML Query
+renderTableBody :: forall m. State -> Date -> HTML m
 renderTableBody state firstDate =
   HH.tbody_ $
     map (renderDayRow state firstDate firstDayColIndex lastDay) (0 .. lastRowIndex)
@@ -257,7 +259,7 @@ renderTableBody state firstDate =
     lastDay = Date.day $ lastDateOfMonth firstDate
     lastRowIndex = (firstDayColIndex + fromEnum lastDay - 1) / 7
 
-renderMonth :: State -> Int -> H.ComponentHTML Query
+renderMonth :: forall m. State -> Int -> HTML m
 renderMonth state@{ props: { styles, formatMonth } } index =
   HH.div
     [ HP.class_ styles.month ]
@@ -295,7 +297,7 @@ renderMonth state@{ props: { styles, formatMonth } } index =
   showPrev = index == 0
   showNext = index + 1 == state.props.numberOfMonths
 
-render :: State -> H.ComponentHTML Query
+render :: forall m. State -> HTML m
 render state@{ props } =
   HH.div
     [ HP.class_ props.styles.root ]
@@ -308,9 +310,11 @@ dayPicker = H.component
   , render
   , eval
   , receiver: HE.input OnReceiveProps
+  , initializer: Nothing
+  , finalizer: Nothing
   }
   where
-  eval :: Query ~> H.ComponentDSL State Query Message m
+  eval :: Query ~> H.HalogenM State Query () Message m
   eval (OnReceiveProps input n) = n <$ do
     H.modify_ $ updateStateWithProps input
 

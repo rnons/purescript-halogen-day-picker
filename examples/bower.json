@@ -11,7 +11,7 @@
   "dependencies": {
     "purescript-now": "^4.0.0",
     "purescript-halogen-day-picker": "*",
-    "purescript-halogen-storybook": "^0.4.0"
+    "purescript-halogen-storybook": "git@github.com:thomashoneyman/purescript-halogen-storybook.git#master"
   },
   "devDependencies": {
     "purescript-psci-support": "^4.0.0"

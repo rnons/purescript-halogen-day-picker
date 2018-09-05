@@ -4,6 +4,7 @@ import Prelude
 
 import Data.Date (Date)
 import Data.Maybe (Maybe(..))
+import Data.Symbol (SProxy(..))
 import Effect.Aff.Class (class MonadAff)
 import Examples.Utils (class_)
 import Halogen as H
@@ -22,19 +23,20 @@ type State =
   , toDate :: Maybe Date
   }
 
-data Slot = SlotFrom | SlotTo
-derive instance eqSlot :: Eq Slot
-derive instance ordSlot :: Ord Slot
+type Slot = (input :: H.Slot DPI.Query DPI.Message String)
+
+_input = SProxy :: SProxy "input"
 
 
 component :: forall m. MonadAff m => Date -> H.Component HH.HTML Query Unit Void m
-component today =
-  H.parentComponent
-    { initialState: const initialState
-    , render
-    , eval
-    , receiver: const Nothing
-    }
+component today = H.component
+  { initialState: const initialState
+  , render
+  , eval
+  , receiver: const Nothing
+  , initializer: Nothing
+  , finalizer: Nothing
+  }
   where
 
   initialState :: State
@@ -43,7 +45,7 @@ component today =
     , toDate: Nothing
     }
 
-  render :: State -> H.ParentHTML Query DPI.Query Slot m
+  render :: State -> H.ComponentHTML Query Slot m
   render { fromDate, toDate } =
     HH.div
       [ class_ "example-range" ]
@@ -53,11 +55,11 @@ component today =
           [ HH.text "Click input to show a calendar" ]
       , HH.div
           [ class_ "row"]
-          [ HH.slot SlotFrom
+          [ HH.slot _input "from"
               DPI.dayPickerInput
               fromProps
               (HE.input HandlePickerFrom)
-          , HH.slot SlotTo
+          , HH.slot _input "to"
               DPI.dayPickerInput
               toProps
               (HE.input HandlePickerTo)
@@ -93,10 +95,10 @@ component today =
         , value = toDate
         }
 
-  eval :: Query ~> H.ParentDSL State Query DPI.Query Slot Void m
+  eval :: Query ~> H.HalogenM State Query Slot Void m
   eval (HandlePickerFrom (DPI.Select date) next) = do
       H.modify_ $ _{ fromDate = Just date }
-      _ <- H.query SlotTo $ H.action DPI.Focus
+      _ <- H.query _input "to" $ H.action DPI.Focus
       pure next
   eval (HandlePickerFrom (DPI.Input mDate) next) = do
       H.modify_ $ _{ fromDate = mDate }

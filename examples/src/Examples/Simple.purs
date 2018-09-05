@@ -2,40 +2,40 @@ module Examples.Simple where
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
 import Data.Date (Date)
-
+import Data.Maybe (Maybe(..))
+import Data.Symbol (SProxy(..))
 import Halogen as H
+import Halogen.DayPicker as DP
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 
-import Halogen.DayPicker as DayPicker
-
 data Query a
-  = HandleDayPicker DayPicker.Message a
+  = HandleDayPicker DP.Message a
 
 type State =
-  { selectedDate :: DayPicker.SelectedDate
+  { selectedDate :: DP.SelectedDate
   }
 
-data Slot = DayPickerSlot
-derive instance eqDayPickerSlot :: Eq Slot
-derive instance ordDayPickerSlot :: Ord Slot
+type Slot = (picker :: H.Slot DP.Query DP.Message Unit)
+
+_picker = SProxy :: SProxy "picker"
 
 component :: forall m. Date -> H.Component HH.HTML Query Unit Void m
-component today =
-  H.parentComponent
-    { initialState: const initialState
-    , render
-    , eval
-    , receiver: const Nothing
-    }
+component today = H.component
+  { initialState: const initialState
+  , render
+  , eval
+  , receiver: const Nothing
+  , initializer: Nothing
+  , finalizer: Nothing
+  }
   where
 
   initialState :: State
-  initialState = { selectedDate: DayPicker.SelectedNone  }
+  initialState = { selectedDate: DP.SelectedNone  }
 
-  render :: State -> H.ParentHTML Query DayPicker.Query Slot m
+  render :: State -> H.ComponentHTML Query Slot m
   render state =
     HH.div_
       [ HH.h1_
@@ -43,14 +43,14 @@ component today =
       , HH.p_
           [ HH.text $ "Click to select a day" ]
       , HH.div_
-          [ HH.slot DayPickerSlot DayPicker.dayPicker input (HE.input HandleDayPicker) ]
+          [ HH.slot _picker unit DP.dayPicker input (HE.input HandleDayPicker) ]
       , HH.text $ "You selected " <> show state.selectedDate
       ]
     where
-    input = (DayPicker.defaultProps today) { selectedDate = state.selectedDate }
+    input = (DP.defaultProps today) { selectedDate = state.selectedDate }
 
-  eval :: Query ~> H.ParentDSL State Query DayPicker.Query Slot Void m
+  eval :: Query ~> H.HalogenM State Query Slot Void m
   eval = case _ of
     HandleDayPicker date next -> do
-      H.modify_ (\state -> state { selectedDate = DayPicker.SelectedSingle date })
+      H.modify_ (\state -> state { selectedDate = DP.SelectedSingle date })
       pure next

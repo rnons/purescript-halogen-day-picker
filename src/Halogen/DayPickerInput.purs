@@ -18,6 +18,7 @@ import Data.Enum (class BoundedEnum, fromEnum, toEnum)
 import Data.Int as Int
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.String (Pattern(Pattern), split)
+import Data.Symbol (SProxy(..))
 import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (sequence)
 import Effect.Aff (delay, forkAff)
@@ -131,7 +132,9 @@ data Message
   = Select Date
   | Input (Maybe Date)
 
-type Slot = Unit
+type Slot = (picker :: H.Slot DayPicker.Query DayPicker.Message Unit)
+
+type HTML m = H.ComponentHTML Query Slot m
 
 inputRef :: H.RefLabel
 inputRef = H.RefLabel "input"
@@ -139,7 +142,7 @@ inputRef = H.RefLabel "input"
 render
   :: forall m
   .  MonadAff m
-  => State -> H.ParentHTML Query DayPicker.Query Unit m
+  => State -> HTML m
 render state@{ styles, inputProps, value } =
   HH.div
     [ HP.class_ styles.root
@@ -161,20 +164,22 @@ render state@{ styles, inputProps, value } =
     ]
   where
     dayPicker =
-      HH.slot unit DayPicker.dayPicker state.dayPickerProps (HE.input HandleDayPicker)
+      HH.slot (SProxy :: SProxy "picker") unit DayPicker.dayPicker state.dayPickerProps (HE.input HandleDayPicker)
 
 -- | A components that includes a text input and `DayPicker.dayPicker`.
 dayPickerInput
   :: forall m. MonadAff m => H.Component HH.HTML Query Props Message m
-dayPickerInput = H.parentComponent
+dayPickerInput = H.component
   { initialState
   , render
   , eval
   , receiver: HE.input OnReceiveProps
+  , initializer: Nothing
+  , finalizer: Nothing
   }
   where
 
-  eval :: Query ~> H.ParentDSL State Query DayPicker.Query Slot Message m
+  eval :: Query ~> H.HalogenM State Query Slot Message m
   eval (OnReceiveProps input n) = n <$ do
     H.modify_ $ updateStateWithProps input
 

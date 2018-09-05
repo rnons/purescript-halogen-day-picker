@@ -18,7 +18,7 @@
     "docs"
   ],
   "dependencies": {
-    "purescript-halogen": "^4.0.0",
+    "purescript-halogen": "https://github.com/slamdata/purescript-halogen.git#e43096ccde699f68f1803acd23bab493a7190e2c",
     "purescript-datetime": "^4.0.0",
     "purescript-generics-rep": "^6.0.0"
   },
